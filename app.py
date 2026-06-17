@@ -3,7 +3,7 @@ import re
 import unicodedata
 import pandas as pd
 import streamlit as st
-
+import sys
 
 POLISH_MONTHS = {
     "stycznia": 1,
@@ -145,10 +145,10 @@ st.title("Coach Monitor")
 
 if st.button("🔄 Refresh Data"):
     with st.spinner("Updating club list..."):
-        subprocess.run(["py", "generate_clubs_csv.py"])
+        subprocess.run([sys.executable, "generate_clubs_csv.py"])
 
     with st.spinner("Refreshing coach data..."):
-        subprocess.run(["py", "compare_clubs.py"])
+        subprocess.run([sys.executable, "compare_clubs.py"])
 
     st.success("Data refreshed.")
     st.rerun()
