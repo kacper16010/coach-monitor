@@ -165,10 +165,7 @@ st.set_page_config(page_title="Coach Monitor", layout="wide")
 
 st.title("Coach Monitor")
 
-st.info(
-    "Automatic refresh is temporarily disabled. "
-    "Scheduled updates will be added next."
-)
+st.caption("Data source: SuperScore and 90minut. Last update is shown in each league tab.")
 
 df = load_data()
 all_differences = df[df["is_difference_calculated"] == True]
