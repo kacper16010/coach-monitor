@@ -143,36 +143,10 @@ st.set_page_config(page_title="Coach Monitor", layout="wide")
 
 st.title("Coach Monitor")
 
-if st.button("🔄 Refresh Data"):
-    try:
-        with st.spinner("Updating club list..."):
-            generate_result = subprocess.run(
-                [sys.executable, "generate_clubs_csv.py"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-        with st.spinner("Refreshing coach data..."):
-            compare_result = subprocess.run(
-                [sys.executable, "compare_clubs.py"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-        st.success("Data refreshed.")
-
-        with st.expander("Refresh logs"):
-            st.text(generate_result.stdout)
-            st.text(compare_result.stdout)
-
-        st.rerun()
-
-    except subprocess.CalledProcessError as error:
-        st.error("Refresh failed.")
-        st.text(error.stdout)
-        st.text(error.stderr)
+st.info(
+    "Automatic refresh is temporarily disabled. "
+    "Scheduled updates will be added next."
+)
 
 
 df = pd.read_csv("results.csv")
