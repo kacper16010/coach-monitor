@@ -1,9 +1,9 @@
-import subprocess
 import re
 import unicodedata
+
 import pandas as pd
 import streamlit as st
-import sys
+
 
 POLISH_MONTHS = {
     "stycznia": 1,
@@ -63,9 +63,12 @@ def parse_polish_date(date_text):
     if len(parts) != 3:
         return pd.NaT
 
-    day = int(parts[0])
-    month = POLISH_MONTHS.get(parts[1])
-    year = int(parts[2])
+    try:
+        day = int(parts[0])
+        month = POLISH_MONTHS.get(parts[1])
+        year = int(parts[2])
+    except ValueError:
+        return pd.NaT
 
     if month is None:
         return pd.NaT
@@ -133,10 +136,29 @@ def show_league_page(df, league_name, group_name=None):
 
     st.dataframe(
         table.style.apply(color_rows, axis=1),
-        use_container_width=True,
+        width="stretch",
         height=665,
         hide_index=True,
     )
+
+
+def load_data():
+    df = pd.read_csv("results.csv")
+
+    if "group" not in df.columns:
+        df["group"] = ""
+
+    df["group"] = df["group"].fillna("")
+
+    df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
+    df = df.sort_values(by="change_date_parsed", ascending=False)
+    df["change_date"] = df["change_date_parsed"].apply(format_date)
+
+    df["is_difference_calculated"] = (
+        df["result"].astype(str).str.upper().eq("DIFFERENCE")
+    )
+
+    return df
 
 
 st.set_page_config(page_title="Coach Monitor", layout="wide")
@@ -148,20 +170,7 @@ st.info(
     "Scheduled updates will be added next."
 )
 
-
-df = pd.read_csv("results.csv")
-
-if "group" not in df.columns:
-    df["group"] = ""
-
-df["group"] = df["group"].fillna("")
-
-df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
-df = df.sort_values(by="change_date_parsed", ascending=False)
-df["change_date"] = df["change_date_parsed"].apply(format_date)
-
-df["is_difference_calculated"] = df["result"].astype(str).str.upper().eq("DIFFERENCE")
-
+df = load_data()
 all_differences = df[df["is_difference_calculated"] == True]
 
 with st.sidebar:
@@ -193,10 +202,10 @@ with st.sidebar:
     ])
 
     page = st.radio(
-    "Navigation",
-    navigation_options,
-    key="selected_page",
-)
+        "Navigation",
+        navigation_options,
+        key="selected_page",
+    )
 
 
 if "Differences" in page:
@@ -211,7 +220,7 @@ if "Differences" in page:
 
         st.dataframe(
             differences_table.style.apply(color_rows, axis=1),
-            use_container_width=True,
+            width="stretch",
             height=500,
             hide_index=True,
         )
