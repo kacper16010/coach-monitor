@@ -5,10 +5,105 @@ import unicodedata
 from playwright.sync_api import sync_playwright
 import os
 
-LEAGUE = "Ekstraklasa"
 
-SUPERSCORE_TABLE_URL = "https://superscore.live/pl-PL/pilka-nozna/rozgrywki/ekstraklasa/0ayigwtr/klasyfikacja?season=33WqTu7gkUPTXyAK0iMzm"
-NINETYMINUT_TABLE_URL = "http://www.90minut.pl/liga/1/liga14675.html"
+LEAGUES = [
+    {
+        "league": "Ekstraklasa",
+        "group": "",
+        # HERE CHANGE LINK FOR EKSTRAKLASA SUPERSCORE
+        "superscore_table_url": "https://superscore.live/pl-PL/pilka-nozna/rozgrywki/ekstraklasa/0ayigwtr/klasyfikacja?season=33WqTu7gkUPTXyAK0iMzm",
+        # HERE CHANGE LINK FOR EKSTRAKLASA 90MINUT
+        "ninetyminut_table_url": "http://www.90minut.pl/liga/1/liga14675.html",
+        "enabled": True,
+    },
+
+    {
+        "league": "1 Liga",
+        "group": "",
+        # HERE CHANGE LINK FOR 1 LIGA SUPERSCORE
+        "superscore_table_url": "https://superscore.live/pl-PL/pilka-nozna/rozgrywki/i-liga/epo3jyw3/klasyfikacja?season=33bPCIgEKv63MQ0RRoPx7",
+        # HERE CHANGE LINK FOR 1 LIGA 90MINUT
+        "ninetyminut_table_url": "http://www.90minut.pl/liga/1/liga14676.html",
+        "enabled": True,
+    },
+
+    {
+        "league": "2 Liga",
+        "group": "",
+        # HERE CHANGE LINK FOR 2 LIGA SUPERSCORE
+        "superscore_table_url": "https://superscore.live/pl-PL/pilka-nozna/rozgrywki/ii-liga/8qiy8yxl/klasyfikacja?season=33fxuk1JOt34NAYfWKDQt",
+        # HERE CHANGE LINK FOR 2 LIGA 90MINUT
+        "ninetyminut_table_url": "http://www.90minut.pl/liga/1/liga14677.html",
+        "enabled": True,
+    },
+
+    {
+        "league": "3 Liga",
+        "group": "Group 1",
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 1 SUPERSCORE
+        "superscore_table_url": None,
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 1 90MINUT
+        "ninetyminut_table_url": None,
+        "enabled": False,
+    },
+    {
+        "league": "3 Liga",
+        "group": "Group 2",
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 2 SUPERSCORE
+        "superscore_table_url": None,
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 2 90MINUT
+        "ninetyminut_table_url": None,
+        "enabled": False,
+    },
+    {
+        "league": "3 Liga",
+        "group": "Group 3",
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 3 SUPERSCORE
+        "superscore_table_url": None,
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 3 90MINUT
+        "ninetyminut_table_url": None,
+        "enabled": False,
+    },
+    {
+        "league": "3 Liga",
+        "group": "Group 4",
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 4 SUPERSCORE
+        "superscore_table_url": None,
+        # HERE CHANGE LINK FOR 3 LIGA GROUP 4 90MINUT
+        "ninetyminut_table_url": None,
+        "enabled": False,
+    },
+]
+
+
+FOURTH_LEAGUE_REGIONS = [
+    "Dolnośląskie",
+    "Kujawsko-Pomorskie",
+    "Lubelskie",
+    "Lubuskie",
+    "Łódzkie",
+    "Małopolskie",
+    "Mazowieckie",
+    "Opolskie",
+    "Podkarpackie",
+    "Podlaskie",
+    "Pomorskie",
+    "Śląskie",
+    "Świętokrzyskie",
+    "Warmińsko-Mazurskie",
+    "Wielkopolskie",
+    "Zachodniopomorskie",
+]
+
+
+for region in FOURTH_LEAGUE_REGIONS:
+    LEAGUES.append({
+        "league": "4 Liga",
+        "group": region,
+        "superscore_table_url": None,
+        "ninetyminut_table_url": None,
+        "enabled": False,
+    })
 
 
 SPECIAL_MATCHES = {
@@ -20,6 +115,15 @@ SPECIAL_MATCHES = {
     "gornik": "gornik zabrze",
     "wisla krakow": "wisla krakow",
     "wisla plock": "wisla plock",
+
+    # 1 Liga mappings
+    "pogon g m": "pogon grodzisk mazowiecki",
+    "s mielec": "stal mielec",
+    "s rzeszow": "stal rzeszow",
+
+    # 2 Liga mappings
+    "legia warszawa ii": "legia ii warszawa",
+    "slask wroclaw ii": "slask ii wroclaw",
 }
 
 
@@ -136,45 +240,71 @@ def find_matching_90minut_club(ss_name, ninetyminut_clubs):
     return None, None
 
 
-superscore_clubs = get_superscore_clubs(SUPERSCORE_TABLE_URL)
-ninetyminut_clubs = get_90minut_clubs(NINETYMINUT_TABLE_URL)
+def generate_rows_for_league(config):
+    league = config["league"]
+    group = config["group"]
+    superscore_table_url = config["superscore_table_url"]
+    ninetyminut_table_url = config["ninetyminut_table_url"]
 
-rows = []
+    if not config["enabled"]:
+        print(f"SKIPPED: {league} {group} - not configured yet")
+        return []
 
-for ss_name, ss_url in superscore_clubs.items():
-    matched_90_name, matched_90_url = find_matching_90minut_club(
-        ss_name,
-        ninetyminut_clubs
-    )
+    if not superscore_table_url or not ninetyminut_table_url:
+        print(f"SKIPPED: {league} {group} - missing URLs")
+        return []
 
-    if matched_90_url is None:
-        print("NO MATCH:", ss_name)
-        continue
+    print(f"Generating: {league} {group}")
 
-    rows.append({
-        "league": LEAGUE,
-        "group": "",
-        "club": matched_90_name,
-        "superscore_url": ss_url,
-        "ninetyminut_url": matched_90_url,
-    })
+    superscore_clubs = get_superscore_clubs(superscore_table_url)
+    ninetyminut_clubs = get_90minut_clubs(ninetyminut_table_url)
 
-# ==========================
-# DOKLEJANIE RĘCZNYCH KLUBÓW
-# ==========================
+    rows = []
 
-manual_file = "manual_clubs.csv"
+    for ss_name, ss_url in superscore_clubs.items():
+        matched_90_name, matched_90_url = find_matching_90minut_club(
+            ss_name,
+            ninetyminut_clubs
+        )
 
-if os.path.exists(manual_file):
+        if matched_90_url is None:
+            print("NO MATCH:", league, group, ss_name)
+            continue
+
+        rows.append({
+            "league": league,
+            "group": group,
+            "club": matched_90_name,
+            "superscore_url": ss_url,
+            "ninetyminut_url": matched_90_url,
+        })
+
+    return rows
+
+
+def load_manual_clubs():
+    manual_file = "manual_clubs.csv"
+
+    if not os.path.exists(manual_file):
+        print("Manual file not found: manual_clubs.csv")
+        return []
+
     with open(manual_file, "r", encoding="utf-8") as file:
         reader = csv.DictReader(file)
         manual_clubs = list(reader)
 
-    rows.extend(manual_clubs)
+    print("Manual clubs loaded:", len(manual_clubs))
+    return manual_clubs
 
-# ==========================
-# ZAPIS
-# ==========================
+
+rows = []
+
+for league_config in LEAGUES:
+    league_rows = generate_rows_for_league(league_config)
+    rows.extend(league_rows)
+
+#manual_rows = load_manual_clubs()
+#rows.extend(manual_rows)
 
 with open("clubs.csv", "w", encoding="utf-8", newline="") as file:
     fieldnames = [
@@ -189,6 +319,7 @@ with open("clubs.csv", "w", encoding="utf-8", newline="") as file:
 
     writer.writeheader()
     writer.writerows(rows)
+
 
 print("Saved clubs.csv")
 print("Clubs saved:", len(rows))
