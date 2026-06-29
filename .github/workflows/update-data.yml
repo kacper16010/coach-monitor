@@ -56,11 +56,21 @@ jobs:
       - name: Compare coaches
         run: python compare_clubs.py --league "${{ steps.selected.outputs.league }}"
 
-      - name: Commit updated data
+            - name: Push updated data to data branch
         run: |
           git config user.name "coach-monitor-bot"
           git config user.email "coach-monitor-bot@users.noreply.github.com"
+
+          mkdir data-output
+          cp clubs.csv data-output/clubs.csv
+          cp results.csv data-output/results.csv
+
+          git fetch origin data
+          git checkout data
+
+          cp data-output/clubs.csv clubs.csv
+          cp data-output/results.csv results.csv
+
           git add clubs.csv results.csv
           git commit -m "Update coach data (${{ steps.selected.outputs.league }})" || echo "No changes to commit"
-          git pull --rebase origin main
-          git push
+          git push origin data
