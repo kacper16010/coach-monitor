@@ -7,7 +7,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from playwright.sync_api import sync_playwright
-
+import argparse
+import os
 
 start_time = time.time()
 
@@ -175,10 +176,22 @@ def print_result(row):
     print("Result:", row["result"])
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--league", default="all")
+args = parser.parse_args()
+
+selected_league = args.league.lower()
+
 last_checked = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S")
 
 with open("clubs.csv", "r", encoding="utf-8") as file:
     clubs = list(csv.DictReader(file))
+
+if selected_league != "all":
+    clubs = [
+        club for club in clubs
+        if club["league"].lower() == selected_league
+    ]
 
 
 results = []
@@ -204,6 +217,20 @@ with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         results.append(row)
         print_result(row)
 
+
+results.sort(key=lambda x: (x["league"], x["group"], x["club"]))
+
+
+if selected_league != "all" and os.path.exists("results.csv"):
+    with open("results.csv", "r", encoding="utf-8") as file:
+        existing_results = list(csv.DictReader(file))
+
+    existing_results = [
+        row for row in existing_results
+        if row["league"].lower() != selected_league
+    ]
+
+    results = existing_results + results
 
 results.sort(key=lambda x: (x["league"], x["group"], x["club"]))
 

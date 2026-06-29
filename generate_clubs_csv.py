@@ -3,6 +3,8 @@ import csv
 import re
 import unicodedata
 from playwright.sync_api import sync_playwright
+import argparse
+import os
 
 
 LEAGUES = [
@@ -283,11 +285,40 @@ def generate_rows_for_league(config):
 
 
 
-rows = []
+parser = argparse.ArgumentParser()
+parser.add_argument("--league", default="all")
+args = parser.parse_args()
+
+selected_league = args.league.lower()
+
+generated_rows = []
 
 for league_config in LEAGUES:
+    league_name = league_config["league"].lower()
+
+    if selected_league != "all" and league_name != selected_league:
+        continue
+
     league_rows = generate_rows_for_league(league_config)
-    rows.extend(league_rows)
+    generated_rows.extend(league_rows)
+
+
+if selected_league == "all":
+    rows = generated_rows
+else:
+    rows = []
+
+    if os.path.exists("clubs.csv"):
+        with open("clubs.csv", "r", encoding="utf-8") as file:
+            existing_rows = list(csv.DictReader(file))
+
+        rows = [
+            row for row in existing_rows
+            if row["league"].lower() != selected_league
+        ]
+
+    rows.extend(generated_rows)
+
 
 with open("clubs.csv", "w", encoding="utf-8", newline="") as file:
     fieldnames = [
@@ -303,5 +334,7 @@ with open("clubs.csv", "w", encoding="utf-8", newline="") as file:
     writer.writeheader()
     writer.writerows(rows)
 
+
 print("Saved clubs.csv")
-print("Clubs saved:", len(rows))
+print("Generated rows:", len(generated_rows))
+print("Total clubs saved:", len(rows))
