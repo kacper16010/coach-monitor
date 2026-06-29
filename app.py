@@ -3,6 +3,8 @@ import unicodedata
 
 import pandas as pd
 import streamlit as st
+import os
+import requests
 
 
 POLISH_MONTHS = {
@@ -120,6 +122,10 @@ def show_league_page(df, league_name, group_name=None):
 
     st.header(title)
 
+    if league_name in ["Ekstraklasa", "1 Liga", "2 Liga"]:
+        if st.button(f"🔄 Refresh {league_name}"):
+            trigger_github_refresh(league_name)
+
     if league_df.empty:
         st.info("No data available yet.")
         return
@@ -161,9 +167,40 @@ def load_data():
     return df
 
 
+def trigger_github_refresh(league):
+    token = os.getenv("GITHUB_ACTIONS_TOKEN")
+
+    if not token:
+        st.error("GitHub refresh token is not configured.")
+        return
+
+    url = "https://api.github.com/repos/kacper16010/coach-monitor/actions/workflows/update-data.yml/dispatches"
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    payload = {
+        "ref": "main",
+        "inputs": {
+            "league": league,
+        },
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 204:
+        st.success(f"Refresh requested for: {league}. Data should update in a few minutes.")
+    else:
+        st.error(f"Refresh request failed: {response.status_code}")
+        st.text(response.text)
+
 st.set_page_config(page_title="Coach Monitor", layout="wide")
 
 st.title("Coach Monitor")
+if st.button("🔄 Refresh all data"):
+    trigger_github_refresh("all")
 
 st.caption("Data source: SuperScore and 90minut. Last update is shown in each league tab.")
 
