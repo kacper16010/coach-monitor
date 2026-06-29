@@ -3,7 +3,6 @@ import csv
 import re
 import unicodedata
 from playwright.sync_api import sync_playwright
-import os
 
 
 LEAGUES = [
@@ -282,19 +281,6 @@ def generate_rows_for_league(config):
     return rows
 
 
-def load_manual_clubs():
-    manual_file = "manual_clubs.csv"
-
-    if not os.path.exists(manual_file):
-        print("Manual file not found: manual_clubs.csv")
-        return []
-
-    with open(manual_file, "r", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
-        manual_clubs = list(reader)
-
-    print("Manual clubs loaded:", len(manual_clubs))
-    return manual_clubs
 
 
 rows = []
@@ -302,9 +288,6 @@ rows = []
 for league_config in LEAGUES:
     league_rows = generate_rows_for_league(league_config)
     rows.extend(league_rows)
-
-#manual_rows = load_manual_clubs()
-#rows.extend(manual_rows)
 
 with open("clubs.csv", "w", encoding="utf-8", newline="") as file:
     fieldnames = [
@@ -319,7 +302,6 @@ with open("clubs.csv", "w", encoding="utf-8", newline="") as file:
 
     writer.writeheader()
     writer.writerows(rows)
-
 
 print("Saved clubs.csv")
 print("Clubs saved:", len(rows))

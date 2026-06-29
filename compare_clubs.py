@@ -10,6 +10,10 @@ from playwright.sync_api import sync_playwright
 
 start_time = time.time()
 
+COACH_ALIASES = {
+    "yuriy shatalov": "jurij szatalow",
+}
+
 
 MAX_WORKERS = 6
 
@@ -34,6 +38,8 @@ def normalize_name(name):
     name = unicodedata.normalize("NFKD", name)
     name = "".join(char for char in name if not unicodedata.combining(char))
     name = " ".join(name.lower().split())
+
+    name = COACH_ALIASES.get(name, name)
 
     return name
 
