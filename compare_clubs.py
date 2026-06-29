@@ -4,6 +4,7 @@ import re
 import time
 import unicodedata
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from playwright.sync_api import sync_playwright
 
@@ -49,14 +50,42 @@ def get_superscore_coach(browser, url):
 
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(1200)
+        page.wait_for_timeout(3000)
 
         text = page.locator("body").inner_text()
         lines = [line.strip() for line in text.splitlines() if line.strip()]
 
+        blocked_words = [
+            "NAPASTNICY",
+            "POMOCNICY",
+            "OBROŃCY",
+            "OBRONCY",
+            "BRAMKARZE",
+            "SKŁAD",
+            "SKLAD",
+            "MECZE",
+            "TABELA",
+        ]
+
+        name_pattern = re.compile(
+            r"^[A-ZĄĆĘŁŃÓŚŹŻA-Z][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻA-Z][a-ząćęłńóśźż]+)+$"
+        )
+
         for i, line in enumerate(lines):
             if "TRENER" in line:
-                return lines[i + 1]
+                for candidate in lines[i + 1:i + 12]:
+                    upper_candidate = candidate.upper()
+
+                    if any(word in upper_candidate for word in blocked_words):
+                        continue
+
+                    if candidate.isupper():
+                        continue
+
+                    if name_pattern.match(candidate):
+                        return candidate
+
+                return lines[i + 1] if i + 1 < len(lines) else None
 
         return None
 
@@ -146,7 +175,7 @@ def print_result(row):
     print("Result:", row["result"])
 
 
-last_checked = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+last_checked = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S")
 
 with open("clubs.csv", "r", encoding="utf-8") as file:
     clubs = list(csv.DictReader(file))
