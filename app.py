@@ -149,7 +149,9 @@ def show_league_page(df, league_name, group_name=None):
 
 
 def load_data():
-    df = pd.read_csv("results.csv")
+    DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
+
+    df = pd.read_csv(DATA_URL)
 
     if "group" not in df.columns:
         df["group"] = ""
