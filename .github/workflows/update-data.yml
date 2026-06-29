@@ -2,11 +2,21 @@ name: Update coach data
 
 on:
   schedule:
-    # 12:00 Poland time = 10:00 UTC in summer, 11:00 UTC in winter
-    # 18:00 Poland time = 16:00 UTC in summer, 17:00 UTC in winter
     - cron: "0 10 * * *"
     - cron: "0 16 * * *"
+
   workflow_dispatch:
+    inputs:
+      league:
+        description: "League to refresh"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - Ekstraklasa
+          - 1 Liga
+          - 2 Liga
 
 permissions:
   contents: write
@@ -18,6 +28,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,17 +41,26 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install chromium
 
+      - name: Select league
+        id: selected
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "league=all" >> $GITHUB_OUTPUT
+          else
+            echo "league=${{ github.event.inputs.league }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Generate club list
-        run: python generate_clubs_csv.py
+        run: python generate_clubs_csv.py --league "${{ steps.selected.outputs.league }}"
 
       - name: Compare coaches
-        run: python compare_clubs.py
+        run: python compare_clubs.py --league "${{ steps.selected.outputs.league }}"
 
       - name: Commit updated data
         run: |
           git config user.name "coach-monitor-bot"
           git config user.email "coach-monitor-bot@users.noreply.github.com"
           git add clubs.csv results.csv
-          git commit -m "Update coach data" || echo "No changes to commit"
+          git commit -m "Update coach data (${{ steps.selected.outputs.league }})" || echo "No changes to commit"
           git pull --rebase origin main
           git push
