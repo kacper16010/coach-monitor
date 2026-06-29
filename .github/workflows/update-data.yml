@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           ref: main
@@ -45,9 +45,9 @@ jobs:
         id: selected
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "league=all" >> $GITHUB_OUTPUT
+            echo "league=all" >> "$GITHUB_OUTPUT"
           else
-            echo "league=${{ github.event.inputs.league }}" >> $GITHUB_OUTPUT
+            echo "league=${{ github.event.inputs.league }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate club list
@@ -56,20 +56,27 @@ jobs:
       - name: Compare coaches
         run: python compare_clubs.py --league "${{ steps.selected.outputs.league }}"
 
-            - name: Push updated data to data branch
+      - name: Save generated data
         run: |
-          git config user.name "coach-monitor-bot"
-          git config user.email "coach-monitor-bot@users.noreply.github.com"
-
-          mkdir data-output
+          mkdir -p data-output
           cp clubs.csv data-output/clubs.csv
           cp results.csv data-output/results.csv
 
-          git fetch origin data
-          git checkout data
+      - name: Checkout data branch
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data-branch
 
-          cp data-output/clubs.csv clubs.csv
-          cp data-output/results.csv results.csv
+      - name: Push updated data to data branch
+        run: |
+          cp data-output/clubs.csv data-branch/clubs.csv
+          cp data-output/results.csv data-branch/results.csv
+
+          cd data-branch
+
+          git config user.name "coach-monitor-bot"
+          git config user.email "coach-monitor-bot@users.noreply.github.com"
 
           git add clubs.csv results.csv
           git commit -m "Update coach data (${{ steps.selected.outputs.league }})" || echo "No changes to commit"
