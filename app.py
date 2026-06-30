@@ -1,6 +1,6 @@
 import re
 import unicodedata
-
+import time
 import pandas as pd
 import streamlit as st
 import os
@@ -111,6 +111,62 @@ def prepare_table(dataframe):
 
     return dataframe[columns_to_show].rename(columns=column_names)
 
+def get_last_checked_for_league(df, league_name, group_name=None):
+    if group_name is None:
+        league_df = df[df["league"] == league_name]
+    else:
+        league_df = df[(df["league"] == league_name) & (df["group"] == group_name)]
+
+    if league_df.empty or "last_checked" not in league_df.columns:
+        return None
+
+    return str(league_df["last_checked"].iloc[0])
+
+def show_refresh_overlay(league_name: str):
+    st.markdown(
+        f"""
+        <style>
+        .refresh-overlay {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.82);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-family: sans-serif;
+        }}
+
+        .spinner {{
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #16a34a;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 18px;
+        }}
+
+        @keyframes spin {{
+            0% {{ transform: rotate(0deg); }}
+            100% {{ transform: rotate(360deg); }}
+        }}
+        </style>
+
+        <div class="refresh-overlay">
+            <div class="spinner"></div>
+            <h3>Refreshing {league_name}...</h3>
+            <p>Please wait. Data is updating in the background.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 
 def show_league_page(df, league_name, group_name=None):
     if group_name is None:
@@ -122,9 +178,40 @@ def show_league_page(df, league_name, group_name=None):
 
     st.header(title)
 
+    if "refreshing_league" not in st.session_state:
+        st.session_state.refreshing_league = None
+
+    if "refresh_started_last_checked" not in st.session_state:
+        st.session_state.refresh_started_last_checked = None
+
+    current_last_checked = get_last_checked_for_league(df, league_name, group_name)
+    is_refreshing = st.session_state.refreshing_league == league_name
+
     if league_name in ["Ekstraklasa", "1 Liga", "2 Liga"]:
-        if st.button(f"🔄 Refresh {league_name}"):
+        if st.button(
+            f"🔄 Refresh {league_name}",
+            disabled=st.session_state.refreshing_league is not None,
+        ):
+            st.session_state.refresh_started_last_checked = current_last_checked
             trigger_github_refresh(league_name)
+            st.session_state.refreshing_league = league_name
+            st.rerun()
+            
+        if is_refreshing:
+            previous_last_checked = st.session_state.refresh_started_last_checked
+
+            if (
+                previous_last_checked is not None
+                and current_last_checked is not None
+                and current_last_checked != previous_last_checked
+            ):
+                st.session_state.refreshing_league = None
+                st.session_state.refresh_started_last_checked = None
+                st.success(f"{league_name} data refreshed successfully.")
+            else:
+                show_refresh_overlay(league_name)
+                time.sleep(5)
+                st.rerun()
 
     if league_df.empty:
         st.info("No data available yet.")
@@ -150,7 +237,6 @@ def show_league_page(df, league_name, group_name=None):
 
 def load_data():
     DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
-
     df = pd.read_csv(DATA_URL)
 
     if "group" not in df.columns:
@@ -201,8 +287,22 @@ def trigger_github_refresh(league):
 st.set_page_config(page_title="Coach Monitor", layout="wide")
 
 st.title("Coach Monitor")
-if st.button("🔄 Refresh all data"):
+if "refreshing_league" not in st.session_state:
+    st.session_state.refreshing_league = None
+
+if st.button(
+    "🔄 Refresh all data",
+    disabled=st.session_state.refreshing_league is not None,
+):
     trigger_github_refresh("all")
+    st.session_state.refreshing_league = "all"
+    st.rerun()
+
+if st.session_state.refreshing_league == "all":
+    show_refresh_overlay("all data")
+    time.sleep(5)
+    st.session_state.refreshing_league = None
+    st.rerun()
 
 st.caption("Data source: SuperScore and 90minut. Last update is shown in each league tab.")
 
