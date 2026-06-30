@@ -159,8 +159,9 @@ def show_refresh_overlay(league_name: str):
 
         <div class="refresh-overlay">
             <div class="spinner"></div>
-            <h3>Refreshing {league_name}...</h3>
-            <p>Please wait. Data is updating in the background.</p>
+            <h2>Refreshing {league_name}</h2>
+            <p>Updating data from SuperScore and 90minut.</p>
+            <p>This may take a few minutes. Please do not close this page.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -183,6 +184,8 @@ def show_league_page(df, league_name, group_name=None):
 
     if "refresh_started_last_checked" not in st.session_state:
         st.session_state.refresh_started_last_checked = None
+    if "refresh_started_at" not in st.session_state:
+        st.session_state.refresh_started_at = None
 
     current_last_checked = get_last_checked_for_league(df, league_name, group_name)
     is_refreshing = st.session_state.refreshing_league == league_name
@@ -193,47 +196,37 @@ def show_league_page(df, league_name, group_name=None):
             disabled=st.session_state.refreshing_league is not None,
         ):
             st.session_state.refresh_started_last_checked = current_last_checked
+            st.session_state.refresh_started_at = time.time()
             trigger_github_refresh(league_name)
             st.session_state.refreshing_league = league_name
             st.rerun()
-            
-        if is_refreshing:
-            previous_last_checked = st.session_state.refresh_started_last_checked
 
-            if (
-                previous_last_checked is not None
-                and current_last_checked is not None
-                and current_last_checked != previous_last_checked
-            ):
-                st.session_state.refreshing_league = None
-                st.session_state.refresh_started_last_checked = None
-                st.success(f"{league_name} data refreshed successfully.")
-            else:
-                show_refresh_overlay(league_name)
-                time.sleep(5)
-                st.rerun()
+    if is_refreshing:
+        refresh_timeout_seconds = 300
+        refresh_started_at = st.session_state.refresh_started_at
 
-    if league_df.empty:
-        st.info("No data available yet.")
-        return
+        if refresh_started_at is not None and time.time() - refresh_started_at > refresh_timeout_seconds:
+            st.session_state.refreshing_league = None
+            st.session_state.refresh_started_last_checked = None
+            st.session_state.refresh_started_at = None
+            st.warning("Refresh is taking longer than expected. Please try again later.")
+            return
 
-    differences = league_df[league_df["is_difference_calculated"] == True]
+        previous_last_checked = st.session_state.refresh_started_last_checked
 
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric("Clubs monitored", len(league_df))
-    col2.metric("Differences detected", len(differences))
-    col3.metric("Last refresh", league_df["last_checked"].iloc[0])
-
-    table = prepare_table(league_df)
-
-    st.dataframe(
-        table.style.apply(color_rows, axis=1),
-        width="stretch",
-        height=665,
-        hide_index=True,
-    )
-
+        if (
+            previous_last_checked is not None
+            and current_last_checked is not None
+            and current_last_checked != previous_last_checked
+        ):
+            st.session_state.refreshing_league = None
+            st.session_state.refresh_started_last_checked = None
+            st.session_state.refresh_started_at = None
+            st.success(f"{league_name} has been updated successfully.")
+        else:
+            show_refresh_overlay(league_name)
+            time.sleep(5)
+            st.rerun()
 
 def load_data():
     DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
