@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 import os
 import requests
-
+APP_VERSION = "0.0.1-dev"
 
 POLISH_MONTHS = {
     "stycznia": 1,
@@ -184,6 +184,7 @@ def show_league_page(df, league_name, group_name=None):
 
     if "refresh_started_last_checked" not in st.session_state:
         st.session_state.refresh_started_last_checked = None
+
     if "refresh_started_at" not in st.session_state:
         st.session_state.refresh_started_at = None
 
@@ -201,17 +202,28 @@ def show_league_page(df, league_name, group_name=None):
             st.session_state.refreshing_league = league_name
             st.rerun()
 
+    if league_df.empty:
+        st.info("No data available yet.")
+        return
+
+    differences = league_df[league_df["is_difference_calculated"] == True]
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Clubs monitored", len(league_df))
+    col2.metric("Differences detected", len(differences))
+    col3.metric("Last refresh", league_df["last_checked"].iloc[0])
+
+    table = prepare_table(league_df)
+
+    st.dataframe(
+        table.style.apply(color_rows, axis=1),
+        width="stretch",
+        height=665,
+        hide_index=True,
+    )
+
     if is_refreshing:
-        refresh_timeout_seconds = 300
-        refresh_started_at = st.session_state.refresh_started_at
-
-        if refresh_started_at is not None and time.time() - refresh_started_at > refresh_timeout_seconds:
-            st.session_state.refreshing_league = None
-            st.session_state.refresh_started_last_checked = None
-            st.session_state.refresh_started_at = None
-            st.warning("Refresh is taking longer than expected. Please try again later.")
-            return
-
         previous_last_checked = st.session_state.refresh_started_last_checked
 
         if (
@@ -223,6 +235,7 @@ def show_league_page(df, league_name, group_name=None):
             st.session_state.refresh_started_last_checked = None
             st.session_state.refresh_started_at = None
             st.success(f"{league_name} has been updated successfully.")
+            st.rerun()
         else:
             show_refresh_overlay(league_name)
             time.sleep(5)
@@ -279,7 +292,13 @@ def trigger_github_refresh(league):
 
 st.set_page_config(page_title="Coach Monitor", layout="wide")
 
-st.title("Coach Monitor")
+left, right = st.columns([8, 2])
+
+with left:
+    st.title("Coach Monitor")
+
+with right:
+    st.caption(f"Version {APP_VERSION}")
 if "refreshing_league" not in st.session_state:
     st.session_state.refreshing_league = None
 
