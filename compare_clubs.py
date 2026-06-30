@@ -50,8 +50,12 @@ def get_superscore_coach(browser, url):
     page = browser.new_page()
 
     try:
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(3000)
+        page.goto(url, wait_until="networkidle", timeout=30000)
+
+        try:
+            page.locator("text=TRENER").wait_for(timeout=5000)
+        except:
+            pass
 
         text = page.locator("body").inner_text()
         lines = [line.strip() for line in text.splitlines() if line.strip()]
@@ -86,7 +90,7 @@ def get_superscore_coach(browser, url):
                     if name_pattern.match(candidate):
                         return candidate
 
-                return lines[i + 1] if i + 1 < len(lines) else None
+                return None
 
         return None
 

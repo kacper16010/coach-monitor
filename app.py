@@ -6,6 +6,8 @@ import streamlit as st
 import os
 import requests
 APP_VERSION = "0.0.1-dev"
+from datetime import datetime, timedelta
+
 
 POLISH_MONTHS = {
     "stycznia": 1,
@@ -261,6 +263,22 @@ def load_data():
     return df
 
 
+def get_next_refresh():
+    now = datetime.now()
+
+    next_hour = now.replace(minute=0, second=0, microsecond=0)
+
+    if now.minute > 0:
+        next_hour += timedelta(hours=1)
+
+    if next_hour.hour < 8:
+        next_hour = next_hour.replace(hour=8)
+
+    if next_hour.hour > 21:
+        next_hour = (next_hour + timedelta(days=1)).replace(hour=8)
+
+    return next_hour.strftime("%H:%M")
+
 def trigger_github_refresh(league):
     token = os.getenv("GITHUB_ACTIONS_TOKEN")
 
@@ -317,6 +335,14 @@ if st.session_state.refreshing_league == "all":
     st.rerun()
 
 st.caption("Data source: SuperScore and 90minut. Last update is shown in each league tab.")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.info(f"🕒 Next automatic refresh: {get_next_refresh()}")
+
+with col2:
+    st.info("🔄 Manual refresh available in every league")
 
 df = load_data()
 all_differences = df[df["is_difference_calculated"] == True]
