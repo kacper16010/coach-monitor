@@ -240,9 +240,8 @@ def show_league_page(df, league_name, group_name=None):
             st.rerun()
         else:
             st.info(f"Refresh requested for {league_name}. Data will update in the background in a few minutes.")
-            st.session_state.refreshing_league = None
-            st.session_state.refresh_started_last_checked = None
-            st.session_state.refresh_started_at = None
+            time.sleep(15)
+            st.rerun()
 
 def load_data():
     DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
