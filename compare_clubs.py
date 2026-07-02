@@ -14,6 +14,7 @@ start_time = time.time()
 
 COACH_ALIASES = {
     "yuriy shatalov": "jurij szatalow",
+
 }
 
 
