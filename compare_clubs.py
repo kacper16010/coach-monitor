@@ -49,59 +49,76 @@ def normalize_name(name):
 def get_superscore_coach(browser, url):
     page = browser.new_page()
 
+    blocked_words = [
+        "TRENER",
+        "NAPASTNICY",
+        "POMOCNICY",
+        "OBROŃCY",
+        "OBRONCY",
+        "BRAMKARZE",
+        "INNE",
+        "SKŁAD",
+        "SKLAD",
+        "MECZE",
+        "TABELA",
+        "STATYSTYKI",
+        "NAJLEPSI GRACZE",
+        "INFORMACJE O DRUŻYNIE",
+        "INFORMACJE O DRUZYNIE",
+    ]
+
+    name_pattern = re.compile(
+        r"^[A-ZĄĆĘŁŃÓŚŹŻÁÉÍÓÚÝČŠŽĽĹŔÄÖÜ][a-ząćęłńóśźżáéíóúýčšžľĺŕäöü]+"
+        r"(?:\s+[A-ZĄĆĘŁŃÓŚŹŻÁÉÍÓÚÝČŠŽĽĹŔÄÖÜ][a-ząćęłńóśźżáéíóúýčšžľĺŕäöü]+)+$"
+    )
+
+    def extract_from_lines(lines):
+        for i, line in enumerate(lines):
+            if "TRENER" not in line.upper():
+                continue
+
+            for candidate in lines[i + 1:i + 10]:
+                candidate = candidate.strip()
+                upper_candidate = candidate.upper()
+
+                if not candidate:
+                    continue
+
+                if any(word in upper_candidate for word in blocked_words):
+                    continue
+
+                if re.fullmatch(r"\d+", candidate):
+                    continue
+
+                if "LAT" in upper_candidate:
+                    continue
+
+                if candidate.startswith("("):
+                    continue
+
+                if name_pattern.match(candidate):
+                    return candidate
+
+        return None
+
     try:
         page.goto(url, wait_until="networkidle", timeout=30000)
 
-        try:
-            page.locator("text=TRENER").wait_for(timeout=5000)
-        except:
-            pass
+        for _ in range(20):
+            text = page.locator("body").inner_text()
+            lines = [line.strip() for line in text.splitlines() if line.strip()]
 
-        text = page.locator("body").inner_text()
+            coach = extract_from_lines(lines)
 
-        print("=" * 80)
-        print(url)
-        print(text[:5000])
+            if coach:
+                return coach
 
-        lines = [line.strip() for line in text.splitlines() if line.strip()]
-
-        blocked_words = [
-            "NAPASTNICY",
-            "POMOCNICY",
-            "OBROŃCY",
-            "OBRONCY",
-            "BRAMKARZE",
-            "SKŁAD",
-            "SKLAD",
-            "MECZE",
-            "TABELA",
-        ]
-
-        name_pattern = re.compile(
-            r"^[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)+$"
-        )
-
-        for i, line in enumerate(lines):
-            if "TRENER" in line.upper():
-                for candidate in lines[i + 1:i + 12]:
-                    upper_candidate = candidate.upper()
-
-                    if any(word in upper_candidate for word in blocked_words):
-                        continue
-
-                    if candidate.startswith("("):
-                        continue
-
-                    if name_pattern.match(candidate):
-                        return candidate
-
-                return None
+            page.wait_for_timeout(1000)
 
         return None
 
     finally:
         page.close()
-
 
 
 def get_ninetyminut_coach(url):
