@@ -239,9 +239,10 @@ def show_league_page(df, league_name, group_name=None):
             st.success(f"{league_name} has been updated successfully.")
             st.rerun()
         else:
-            show_refresh_overlay(league_name)
-            time.sleep(5)
-            st.rerun()
+            st.info(f"Refresh requested for {league_name}. Data will update in the background in a few minutes.")
+            st.session_state.refreshing_league = None
+            st.session_state.refresh_started_last_checked = None
+            st.session_state.refresh_started_at = None
 
 def load_data():
     DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
@@ -320,31 +321,25 @@ with right:
 if "refreshing_league" not in st.session_state:
     st.session_state.refreshing_league = None
 
-if st.button(
-    "🔄 Refresh all data",
-    disabled=st.session_state.refreshing_league is not None,
-):
-    trigger_github_refresh("all")
-    st.session_state.refreshing_league = "all"
-    st.rerun()
+if "refresh_started_last_checked" not in st.session_state:
+    st.session_state.refresh_started_last_checked = None
 
-if st.session_state.refreshing_league == "all":
-    show_refresh_overlay("all data")
-    time.sleep(5)
-    st.session_state.refreshing_league = None
-    st.rerun()
+if "refresh_started_at" not in st.session_state:
+    st.session_state.refresh_started_at = None
+
 
 st.caption("Data source: SuperScore and 90minut. Last update is shown in each league tab.")
 
-col1, col2 = st.columns(2)
-
-with col1:
-    st.info(f"🕒 Next automatic refresh: {get_next_refresh()}")
-
-with col2:
-    st.info("🔄 Manual refresh available in every league")
-
 df = load_data()
+
+global_last_checked = ""
+
+if not df.empty and "last_checked" in df.columns:
+    global_last_checked = str(df["last_checked"].max())
+
+st.info(f"🕒 Last refresh: {global_last_checked}")
+
+  
 all_differences = df[df["is_difference_calculated"] == True]
 
 with st.sidebar:

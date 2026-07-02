@@ -18,7 +18,7 @@ COACH_ALIASES = {
 }
 
 
-MAX_WORKERS = 6
+MAX_WORKERS = 10
 
 
 def normalize_name(name):
