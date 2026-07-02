@@ -58,6 +58,11 @@ def get_superscore_coach(browser, url):
             pass
 
         text = page.locator("body").inner_text()
+
+        print("=" * 80)
+        print(url)
+        print(text[:5000])
+
         lines = [line.strip() for line in text.splitlines() if line.strip()]
 
         blocked_words = [
@@ -73,18 +78,18 @@ def get_superscore_coach(browser, url):
         ]
 
         name_pattern = re.compile(
-            r"^[A-ZĄĆĘŁŃÓŚŹŻA-Z][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻA-Z][a-ząćęłńóśźż]+)+$"
+            r"^[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+(?:\s+[A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż]+)+$"
         )
 
         for i, line in enumerate(lines):
-            if "TRENER" in line:
+            if "TRENER" in line.upper():
                 for candidate in lines[i + 1:i + 12]:
                     upper_candidate = candidate.upper()
 
                     if any(word in upper_candidate for word in blocked_words):
                         continue
 
-                    if candidate.isupper():
+                    if candidate.startswith("("):
                         continue
 
                     if name_pattern.match(candidate):
@@ -96,6 +101,7 @@ def get_superscore_coach(browser, url):
 
     finally:
         page.close()
+
 
 
 def get_ninetyminut_coach(url):
@@ -154,8 +160,12 @@ def process_club(browser, club, last_checked):
         change_date = None
         print(f"90minut error for {club_name}: {e}")
 
-    is_difference = normalize_name(superscore_coach) != normalize_name(ninetyminut_coach)
-    result = "DIFFERENCE" if is_difference else "MATCH"
+    if superscore_coach is None or ninetyminut_coach is None:
+        is_difference = False
+        result = "UNKNOWN"
+    else:
+        is_difference = normalize_name(superscore_coach) != normalize_name(ninetyminut_coach)
+        result = "DIFFERENCE" if is_difference else "MATCH"
 
     return {
         "league": league,
