@@ -1,6 +1,7 @@
 import re
 import unicodedata
 import time
+import io
 import pandas as pd
 import streamlit as st
 import os
@@ -46,6 +47,8 @@ FOURTH_LEAGUE_REGIONS = [
 
 
 DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
+DATA_BRANCH_API_URL = "https://api.github.com/repos/kacper16010/coach-monitor/branches/data"
+RAW_DATA_URL_TEMPLATE = "https://raw.githubusercontent.com/kacper16010/coach-monitor/{sha}/results.csv"
 REFRESHABLE_LEAGUES = {"Ekstraklasa", "1 Liga", "2 Liga"}
 REFRESH_POLL_SECONDS = 20
 REFRESH_STALE_AFTER_SECONDS = 30 * 60
@@ -152,6 +155,45 @@ def get_global_last_checked(df):
         return ""
 
     return str(checked_values.max())
+
+
+def get_github_api_headers():
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Cache-Control": "no-cache",
+    }
+    token = get_github_actions_token()
+
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    return headers
+
+
+def get_data_branch_sha():
+    response = requests.get(
+        DATA_BRANCH_API_URL,
+        headers=get_github_api_headers(),
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()["commit"]["sha"]
+
+
+def read_results_csv_from_data_branch():
+    try:
+        data_sha = get_data_branch_sha()
+        data_url = RAW_DATA_URL_TEMPLATE.format(sha=data_sha)
+        response = requests.get(
+            f"{data_url}?t={int(time.time())}",
+            headers={"Cache-Control": "no-cache"},
+            timeout=20,
+        )
+        response.raise_for_status()
+        return pd.read_csv(io.StringIO(response.text))
+    except (requests.RequestException, KeyError, ValueError):
+        data_url = f"{DATA_URL}?t={int(time.time())}"
+        return pd.read_csv(data_url)
 
 
 def ensure_refresh_state():
@@ -349,8 +391,7 @@ else:
 
 
 def load_data():
-    data_url = f"{DATA_URL}?t={int(time.time())}"
-    df = pd.read_csv(data_url)
+    df = read_results_csv_from_data_branch()
 
     if "group" not in df.columns:
         df["group"] = ""
