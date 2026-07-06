@@ -3,7 +3,6 @@ import unicodedata
 import time
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 import os
 import requests
 APP_VERSION = "0.0.1-dev"
@@ -166,21 +165,38 @@ def get_refresh_key(league_name, group_name=None):
     return f"{league_name}:{group_name}"
 
 
-def schedule_refresh_poll(seconds=REFRESH_POLL_SECONDS):
-    components.html(
+def render_refresh_spinner(message):
+    st.markdown(
         f"""
-        <script>
-        window.setTimeout(function () {{
-            window.parent.location.reload();
-        }}, {seconds * 1000});
-        </script>
+        <div style="display:flex;align-items:center;gap:0.55rem;padding-top:0.35rem;">
+            <div style="
+                width:18px;
+                height:18px;
+                border:3px solid rgba(49, 51, 63, 0.18);
+                border-top-color:#16a34a;
+                border-radius:50%;
+                animation:coach-monitor-spin 0.8s linear infinite;
+            "></div>
+            <span>{message}</span>
+        </div>
+        <style>
+        @keyframes coach-monitor-spin {{
+            from {{ transform: rotate(0deg); }}
+            to {{ transform: rotate(360deg); }}
+        }}
+        </style>
         """,
-        height=0,
+        unsafe_allow_html=True,
     )
 
 
+def _show_league_page(df, league_name, group_name=None):
+    ensure_refresh_state()
+    refresh_key = get_refresh_key(league_name, group_name)
 
-def show_league_page(df, league_name, group_name=None):
+    if st.session_state.refresh_requests.get(refresh_key):
+        df = load_data()
+
     if group_name is None:
         league_df = df[df["league"] == league_name]
         title = league_name
@@ -190,10 +206,9 @@ def show_league_page(df, league_name, group_name=None):
 
     st.header(title)
 
-    ensure_refresh_state()
-    refresh_key = get_refresh_key(league_name, group_name)
     current_last_checked = get_last_checked_for_league(df, league_name, group_name)
     refresh_request = st.session_state.refresh_requests.get(refresh_key)
+    is_refreshing = refresh_request is not None
     refresh_completed = False
 
     if refresh_request:
@@ -205,19 +220,28 @@ def show_league_page(df, league_name, group_name=None):
         ):
             st.session_state.refresh_requests.pop(refresh_key, None)
             refresh_request = None
+            is_refreshing = False
             refresh_completed = True
 
     if league_name in REFRESHABLE_LEAGUES and group_name is None:
-        if st.button(
-            f"🔄 Refresh {league_name}",
-            key=f"refresh_{refresh_key}",
-        ):
-            if trigger_github_refresh(league_name):
-                st.session_state.refresh_requests[refresh_key] = {
-                    "started_last_checked": current_last_checked,
-                    "started_at": time.time(),
-                }
-                st.rerun()
+        button_col, spinner_col = st.columns([1, 4])
+
+        with button_col:
+            if st.button(
+                f"Refresh {league_name}",
+                key=f"refresh_{refresh_key}",
+                disabled=is_refreshing,
+            ):
+                if trigger_github_refresh(league_name):
+                    st.session_state.refresh_requests[refresh_key] = {
+                        "started_last_checked": current_last_checked,
+                        "started_at": time.time(),
+                    }
+                    st.rerun()
+
+        with spinner_col:
+            if is_refreshing:
+                render_refresh_spinner("Refreshing data...")
 
     if refresh_completed:
         st.success(f"{league_name} has been updated successfully.")
@@ -230,7 +254,6 @@ def show_league_page(df, league_name, group_name=None):
                 "This refresh is taking longer than usual. You can request it again, "
                 "or leave this page open while the background workflow finishes."
             )
-        schedule_refresh_poll()
 
     if league_df.empty:
         st.info("No data available yet.")
@@ -252,6 +275,13 @@ def show_league_page(df, league_name, group_name=None):
         height=665,
         hide_index=True,
     )
+
+
+if hasattr(st, "fragment"):
+    show_league_page = st.fragment(run_every=f"{REFRESH_POLL_SECONDS}s")(_show_league_page)
+else:
+    show_league_page = _show_league_page
+
 
 def load_data():
     data_url = f"{DATA_URL}?t={int(time.time())}"
@@ -458,10 +488,3 @@ elif page == "📧 Notifications":
 elif page == "⚙️ Settings":
     st.header("Settings")
     st.write("Automatic refresh: not configured yet")
-    _, token_info = get_github_actions_token_info()
-    st.write(
-        "GITHUB_ACTIONS_TOKEN env: "
-        f"present={token_info['present']}, "
-        f"non_empty={token_info['non_empty']}, "
-        f"length={token_info['length']}"
-    )
