@@ -1,7 +1,9 @@
 from urllib.request import Request, urlopen
 import csv
+import html
 import re
 import unicodedata
+from difflib import SequenceMatcher
 from playwright.sync_api import sync_playwright
 import argparse
 import os
@@ -178,6 +180,21 @@ SPECIAL_MATCHES = {
 }
 
 
+CLUB_NAME_STOPWORDS = {
+    "aks",
+    "ap",
+    "gks",
+    "kks",
+    "ks",
+    "lks",
+    "mks",
+    "rks",
+    "rts",
+    "skra",
+    "zks",
+}
+
+
 def normalize_club_name(name):
     name = name.strip().lower()
 
@@ -203,6 +220,40 @@ def normalize_club_name(name):
     name = " ".join(name.split())
 
     return name
+
+
+def comparable_club_name(name):
+    normalized = normalize_club_name(name)
+    tokens = [
+        token
+        for token in normalized.split()
+        if token not in CLUB_NAME_STOPWORDS
+    ]
+
+    return " ".join(tokens)
+
+
+def club_match_score(first_name, second_name):
+    first = comparable_club_name(first_name)
+    second = comparable_club_name(second_name)
+
+    if not first or not second:
+        return 0
+
+    if first == second:
+        return 100
+
+    first_tokens = set(first.split())
+    second_tokens = set(second.split())
+    overlap = len(first_tokens & second_tokens)
+    max_tokens = max(len(first_tokens), len(second_tokens))
+    token_score = int((overlap / max_tokens) * 100) if max_tokens else 0
+    sequence_score = int(SequenceMatcher(None, first, second).ratio() * 100)
+
+    if first in second or second in first:
+        return max(token_score, sequence_score, 88)
+
+    return max(token_score, sequence_score)
 
 
 def get_superscore_clubs(url):
@@ -240,15 +291,16 @@ def get_90minut_clubs(url):
     request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
     response = urlopen(request)
 
-    html = response.read().decode("iso-8859-2", errors="ignore")
+    html_text = response.read().decode("iso-8859-2", errors="ignore")
 
     pattern = r'href="([^"]*skarb\.php\?id_klub=\d+[^"]*)"[^>]*>(.*?)</a>'
-    matches = re.findall(pattern, html, flags=re.IGNORECASE)
+    matches = re.findall(pattern, html_text, flags=re.IGNORECASE | re.DOTALL)
 
     clubs = {}
 
     for href, name in matches:
         name = re.sub("<.*?>", "", name).strip()
+        name = html.unescape(name)
 
         if not name:
             continue
@@ -279,6 +331,8 @@ def find_matching_90minut_club(ss_name, ninetyminut_clubs):
 
         return None, None
 
+    best_match = (None, None, 0)
+
     for nm_name, nm_url in ninetyminut_clubs.items():
         nm_normalized = normalize_club_name(nm_name)
 
@@ -287,6 +341,14 @@ def find_matching_90minut_club(ss_name, ninetyminut_clubs):
 
         if ss_normalized in nm_normalized or nm_normalized in ss_normalized:
             return nm_name, nm_url
+
+        score = club_match_score(ss_name, nm_name)
+        if score > best_match[2]:
+            best_match = (nm_name, nm_url, score)
+
+    if best_match[2] >= 82:
+        print("FUZZY MATCH:", ss_name, "=>", best_match[0], "score:", best_match[2])
+        return best_match[0], best_match[1]
 
     return None, None
 
@@ -320,7 +382,8 @@ def generate_rows_for_league(config):
 
         if matched_90_url is None:
             print("NO MATCH:", league, group, ss_name)
-            continue
+            matched_90_name = ss_name
+            matched_90_url = ""
 
         rows.append({
             "league": league,

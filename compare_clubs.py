@@ -1,5 +1,6 @@
 from urllib.request import Request, urlopen
 import csv
+import html
 import re
 import time
 import unicodedata
@@ -123,35 +124,44 @@ def get_superscore_coach(browser, url):
 
 
 def get_ninetyminut_coach(url):
-    html = None
+    if not url:
+        return None, None
+
+    html_text = None
 
     for attempt in range(3):
         try:
             request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
             response = urlopen(request, timeout=30)
-            html = response.read().decode("iso-8859-2", errors="ignore")
+            html_text = response.read().decode("iso-8859-2", errors="ignore")
             break
         except Exception:
             if attempt == 2:
                 raise
             time.sleep(2)
 
-    index = html.find("Trener:")
+    index = html_text.find("Trener:")
     if index == -1:
         return None, None
 
-    fragment = html[index:index + 500]
+    fragment = html_text[index:index + 500]
 
-    pattern = r"<b>(.*?)</b>\s*\(od\s*(.*?)\)"
-    matches = re.findall(pattern, fragment)
+    pattern = r"<b>\s*(.*?)\s*</b>\s*\(od\s*(.*?)\)"
+    matches = re.findall(pattern, fragment, flags=re.IGNORECASE | re.DOTALL)
 
     if matches:
         coach_name, change_date = matches[-1]
 
-        coach_name = coach_name.strip()
-        change_date = change_date.strip()
+        coach_name = re.sub(r"<.*?>", "", coach_name).strip()
+        change_date = re.sub(r"<.*?>", "", change_date).strip()
+
+        coach_name = html.unescape(coach_name)
+        change_date = html.unescape(change_date)
 
         coach_name = re.sub(r"\s+[A-Z]{3}(\/[A-Z]{3})*$", "", coach_name).strip()
+
+        if not coach_name:
+            return None, None
 
         return coach_name, change_date
 
