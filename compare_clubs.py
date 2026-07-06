@@ -210,9 +210,12 @@ def print_result(row):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--league", default="all")
+parser.add_argument("--group", default="all")
 args = parser.parse_args()
 
 selected_league = args.league.lower()
+selected_group = args.group.lower()
+is_partial_refresh = selected_league != "all" or selected_group != "all"
 
 last_checked = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -225,8 +228,25 @@ if selected_league != "all":
         if club["league"].lower() == selected_league
     ]
 
+if selected_group != "all":
+    clubs = [
+        club for club in clubs
+        if str(club.get("group", "")).lower() == selected_group
+    ]
 
-results = []
+
+if is_partial_refresh and not clubs:
+    keep_existing_results = True
+    print("No clubs found for partial refresh. Keeping existing results.csv rows.")
+    if os.path.exists("results.csv"):
+        with open("results.csv", "r", encoding="utf-8") as file:
+            results = list(csv.DictReader(file))
+    else:
+        results = []
+else:
+    keep_existing_results = False
+    results = []
+
 
 def process_club_worker(club, last_checked):
     with sync_playwright() as p:
@@ -253,13 +273,16 @@ with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
 results.sort(key=lambda x: (x["league"], x["group"], x["club"]))
 
 
-if selected_league != "all" and os.path.exists("results.csv"):
+if is_partial_refresh and not keep_existing_results and os.path.exists("results.csv"):
     with open("results.csv", "r", encoding="utf-8") as file:
         existing_results = list(csv.DictReader(file))
 
     existing_results = [
         row for row in existing_results
-        if row["league"].lower() != selected_league
+        if not (
+            (selected_league == "all" or row["league"].lower() == selected_league)
+            and (selected_group == "all" or str(row.get("group", "")).lower() == selected_group)
+        )
     ]
 
     results = existing_results + results

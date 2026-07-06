@@ -6,7 +6,6 @@ import pandas as pd
 import streamlit as st
 import os
 import requests
-APP_VERSION = "0.0.1-dev"
 from datetime import datetime, timedelta
 
 
@@ -27,20 +26,20 @@ POLISH_MONTHS = {
 
 
 FOURTH_LEAGUE_REGIONS = [
-    "Dolnośląskie",
+    "Dolnoslaskie",
     "Kujawsko-Pomorskie",
     "Lubelskie",
     "Lubuskie",
-    "Łódzkie",
-    "Małopolskie",
+    "Lodzkie",
+    "Malopolskie",
     "Mazowieckie",
     "Opolskie",
     "Podkarpackie",
     "Podlaskie",
     "Pomorskie",
-    "Śląskie",
-    "Świętokrzyskie",
-    "Warmińsko-Mazurskie",
+    "Slaskie",
+    "Swietokrzyskie",
+    "Warminsko-Mazurskie",
     "Wielkopolskie",
     "Zachodniopomorskie",
 ]
@@ -49,7 +48,7 @@ FOURTH_LEAGUE_REGIONS = [
 DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
 DATA_BRANCH_API_URL = "https://api.github.com/repos/kacper16010/coach-monitor/branches/data"
 RAW_DATA_URL_TEMPLATE = "https://raw.githubusercontent.com/kacper16010/coach-monitor/{sha}/results.csv"
-REFRESHABLE_LEAGUES = {"Ekstraklasa", "1 Liga", "2 Liga"}
+REFRESHABLE_LEAGUES = {"Ekstraklasa", "1 Liga", "2 Liga", "3 Liga", "4 Liga"}
 REFRESH_POLL_SECONDS = 20
 REFRESH_STALE_AFTER_SECONDS = 30 * 60
 REFRESH_REQUEST_MESSAGE = (
@@ -319,8 +318,7 @@ def _show_league_page(df, league_name, group_name=None):
     if refresh_request:
         previous_last_checked = refresh_request.get("started_last_checked")
         if (
-            previous_last_checked is not None
-            and current_last_checked is not None
+            current_last_checked is not None
             and current_last_checked != previous_last_checked
         ):
             st.session_state.refresh_requests.pop(refresh_key, None)
@@ -329,16 +327,17 @@ def _show_league_page(df, league_name, group_name=None):
             )
             st.rerun()
 
-    if league_name in REFRESHABLE_LEAGUES and group_name is None:
+    if league_name in REFRESHABLE_LEAGUES:
         button_col, spinner_col = st.columns([1, 4])
+        refresh_label = title
 
         with button_col:
             if st.button(
-                f"Refresh {league_name}",
+                f"Refresh {refresh_label}",
                 key=f"refresh_{refresh_key}",
                 disabled=is_refreshing,
             ):
-                if trigger_github_refresh(league_name):
+                if trigger_github_refresh(league_name, group_name):
                     st.session_state.refresh_requests[refresh_key] = {
                         "started_last_checked": current_last_checked,
                         "started_at": time.time(),
@@ -442,7 +441,7 @@ def get_github_actions_token():
     return token
 
 
-def trigger_github_refresh(league):
+def trigger_github_refresh(league, group=None):
     token, token_info = get_github_actions_token_info()
 
     if not token:
@@ -469,6 +468,7 @@ def trigger_github_refresh(league):
         "ref": "main",
         "inputs": {
             "league": league,
+            "group": group or "all",
         },
     }
 
@@ -490,13 +490,7 @@ def trigger_github_refresh(league):
 
 st.set_page_config(page_title="Coach Monitor", layout="wide")
 
-left, right = st.columns([8, 2])
-
-with left:
-    st.title("Coach Monitor")
-
-with right:
-    st.caption(f"Version {APP_VERSION}")
+st.title("Coach Monitor")
 ensure_refresh_state()
 
 

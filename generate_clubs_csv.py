@@ -7,6 +7,9 @@ import argparse
 import os
 
 
+SOURCE_CONFIG_FILE = "league_sources.csv"
+
+
 LEAGUES = [
     {
         "league": "Ekstraklasa",
@@ -78,20 +81,20 @@ LEAGUES = [
 
 
 FOURTH_LEAGUE_REGIONS = [
-    "Dolnośląskie",
+    "Dolnoslaskie",
     "Kujawsko-Pomorskie",
     "Lubelskie",
     "Lubuskie",
-    "Łódzkie",
-    "Małopolskie",
+    "Lodzkie",
+    "Malopolskie",
     "Mazowieckie",
     "Opolskie",
     "Podkarpackie",
     "Podlaskie",
     "Pomorskie",
-    "Śląskie",
-    "Świętokrzyskie",
-    "Warmińsko-Mazurskie",
+    "Slaskie",
+    "Swietokrzyskie",
+    "Warminsko-Mazurskie",
     "Wielkopolskie",
     "Zachodniopomorskie",
 ]
@@ -105,6 +108,53 @@ for region in FOURTH_LEAGUE_REGIONS:
         "ninetyminut_table_url": None,
         "enabled": False,
     })
+
+
+def parse_enabled(value, superscore_table_url, ninetyminut_table_url):
+    value = str(value or "").strip().lower()
+
+    if value in ("false", "0", "no", "n", "disabled"):
+        return False
+    if value in ("true", "1", "yes", "y", "enabled"):
+        return True
+
+    return bool(superscore_table_url and ninetyminut_table_url)
+
+
+def load_leagues_from_source_config(path=SOURCE_CONFIG_FILE):
+    if not os.path.exists(path):
+        return LEAGUES
+
+    with open(path, "r", encoding="utf-8-sig", newline="") as file:
+        rows = list(csv.DictReader(file))
+
+    leagues = []
+
+    for row in rows:
+        league = str(row.get("league", "")).strip()
+        group = str(row.get("group", "")).strip()
+        superscore_table_url = str(row.get("superscore_table_url", "")).strip()
+        ninetyminut_table_url = str(row.get("ninetyminut_table_url", "")).strip()
+
+        if not league:
+            continue
+
+        leagues.append({
+            "league": league,
+            "group": group,
+            "superscore_table_url": superscore_table_url or None,
+            "ninetyminut_table_url": ninetyminut_table_url or None,
+            "enabled": parse_enabled(
+                row.get("enabled", ""),
+                superscore_table_url,
+                ninetyminut_table_url,
+            ),
+        })
+
+    return leagues
+
+
+LEAGUES = load_leagues_from_source_config()
 
 
 SPECIAL_MATCHES = {
@@ -287,23 +337,37 @@ def generate_rows_for_league(config):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--league", default="all")
+parser.add_argument("--group", default="all")
 args = parser.parse_args()
 
 selected_league = args.league.lower()
+selected_group = args.group.lower()
 
 generated_rows = []
+is_partial_refresh = selected_league != "all" or selected_group != "all"
 
 for league_config in LEAGUES:
     league_name = league_config["league"].lower()
+    group_name = str(league_config["group"]).lower()
 
     if selected_league != "all" and league_name != selected_league:
+        continue
+    if selected_group != "all" and group_name != selected_group:
         continue
 
     league_rows = generate_rows_for_league(league_config)
     generated_rows.extend(league_rows)
 
 
-if selected_league == "all":
+if is_partial_refresh and not generated_rows:
+    rows = []
+
+    if os.path.exists("clubs.csv"):
+        with open("clubs.csv", "r", encoding="utf-8") as file:
+            rows = list(csv.DictReader(file))
+
+    print("No rows generated for partial refresh. Keeping existing clubs.csv rows.")
+elif selected_league == "all" and selected_group == "all":
     rows = generated_rows
 else:
     rows = []
@@ -314,7 +378,10 @@ else:
 
         rows = [
             row for row in existing_rows
-            if row["league"].lower() != selected_league
+            if not (
+                row["league"].lower() == selected_league
+                and (selected_group == "all" or str(row.get("group", "")).lower() == selected_group)
+            )
         ]
 
     rows.extend(generated_rows)
