@@ -52,6 +52,7 @@ REFRESH_STALE_AFTER_SECONDS = 30 * 60
 REFRESH_REQUEST_MESSAGE = (
     "Refresh requested for {league}. Data will update in the background in a few minutes."
 )
+PAGE_QUERY_PARAM = "page"
 
 
 def normalize_name(name):
@@ -163,6 +164,67 @@ def get_refresh_key(league_name, group_name=None):
         return league_name
 
     return f"{league_name}:{group_name}"
+
+
+def page_to_slug(page):
+    page = str(page)
+
+    if "Differences" in page:
+        return "differences"
+    if "Ekstraklasa" in page:
+        return "ekstraklasa"
+    if "1 Liga" in page:
+        return "1-liga"
+    if "2 Liga" in page:
+        return "2-liga"
+    if "3 Liga" in page:
+        group = page.split(" - ", 1)[-1]
+        return f"3-liga-{slugify(group)}"
+    if "4 Liga" in page:
+        region = page.split(" - ", 1)[-1]
+        return f"4-liga-{slugify(region)}"
+    if "Notifications" in page:
+        return "notifications"
+    if "Settings" in page:
+        return "settings"
+
+    return slugify(page)
+
+
+def slugify(value):
+    value = unicodedata.normalize("NFKD", str(value))
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    value = re.sub(r"[^a-zA-Z0-9]+", "-", value).strip("-").lower()
+    return value or "page"
+
+
+def get_query_param(name):
+    try:
+        value = st.query_params.get(name)
+    except AttributeError:
+        value = st.experimental_get_query_params().get(name)
+
+    if isinstance(value, list):
+        return value[0] if value else None
+
+    return value
+
+
+def set_query_param(name, value):
+    try:
+        st.query_params[name] = value
+    except AttributeError:
+        st.experimental_set_query_params(**{name: value})
+
+
+def get_initial_page(navigation_options):
+    page_by_slug = {page_to_slug(option): option for option in navigation_options}
+    requested_slug = get_query_param(PAGE_QUERY_PARAM)
+
+    if requested_slug in page_by_slug:
+        return page_by_slug[requested_slug]
+
+    return navigation_options[0]
 
 
 def render_refresh_spinner(message):
@@ -433,11 +495,18 @@ with st.sidebar:
         "⚙️ Settings",
     ])
 
+    initial_page = get_initial_page(navigation_options)
+
     page = st.radio(
         "Navigation",
         navigation_options,
+        index=navigation_options.index(initial_page),
         key="selected_page",
     )
+
+    page_slug = page_to_slug(page)
+    if get_query_param(PAGE_QUERY_PARAM) != page_slug:
+        set_query_param(PAGE_QUERY_PARAM, page_slug)
 
 
 if "Differences" in page:

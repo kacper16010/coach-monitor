@@ -55,6 +55,12 @@ jobs:
             echo "league=${{ github.event.inputs.league }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Load existing data for partial refresh
+        if: steps.selected.outputs.league != 'all'
+        run: |
+          git fetch origin data
+          git checkout origin/data -- clubs.csv results.csv
+
       - name: Generate club list
         run: python generate_clubs_csv.py --league "${{ steps.selected.outputs.league }}"
 
