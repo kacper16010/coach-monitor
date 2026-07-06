@@ -157,6 +157,8 @@ def get_global_last_checked(df):
 def ensure_refresh_state():
     if "refresh_requests" not in st.session_state:
         st.session_state.refresh_requests = {}
+    if "refresh_successes" not in st.session_state:
+        st.session_state.refresh_successes = {}
 
 
 def get_refresh_key(league_name, group_name=None):
@@ -271,7 +273,6 @@ def _show_league_page(df, league_name, group_name=None):
     current_last_checked = get_last_checked_for_league(df, league_name, group_name)
     refresh_request = st.session_state.refresh_requests.get(refresh_key)
     is_refreshing = refresh_request is not None
-    refresh_completed = False
 
     if refresh_request:
         previous_last_checked = refresh_request.get("started_last_checked")
@@ -281,9 +282,10 @@ def _show_league_page(df, league_name, group_name=None):
             and current_last_checked != previous_last_checked
         ):
             st.session_state.refresh_requests.pop(refresh_key, None)
-            refresh_request = None
-            is_refreshing = False
-            refresh_completed = True
+            st.session_state.refresh_successes[refresh_key] = (
+                f"{league_name} has been updated successfully."
+            )
+            st.rerun()
 
     if league_name in REFRESHABLE_LEAGUES and group_name is None:
         button_col, spinner_col = st.columns([1, 4])
@@ -305,8 +307,9 @@ def _show_league_page(df, league_name, group_name=None):
             if is_refreshing:
                 render_refresh_spinner("Refreshing data...")
 
-    if refresh_completed:
-        st.success(f"{league_name} has been updated successfully.")
+    success_message = st.session_state.refresh_successes.pop(refresh_key, None)
+    if success_message:
+        st.success(success_message)
 
     if refresh_request:
         elapsed_seconds = int(time.time() - refresh_request.get("started_at", time.time()))
@@ -495,7 +498,15 @@ with st.sidebar:
         "⚙️ Settings",
     ])
 
+    current_query_slug = get_query_param(PAGE_QUERY_PARAM)
     initial_page = get_initial_page(navigation_options)
+    selected_page = st.session_state.get("selected_page")
+
+    if selected_page not in navigation_options:
+        st.session_state.selected_page = initial_page
+    elif current_query_slug != st.session_state.get("applied_page_slug"):
+        st.session_state.selected_page = initial_page
+        st.session_state.applied_page_slug = current_query_slug
 
     page = st.radio(
         "Navigation",
@@ -507,6 +518,7 @@ with st.sidebar:
     page_slug = page_to_slug(page)
     if get_query_param(PAGE_QUERY_PARAM) != page_slug:
         set_query_param(PAGE_QUERY_PARAM, page_slug)
+    st.session_state.applied_page_slug = page_slug
 
 
 if "Differences" in page:
