@@ -177,6 +177,10 @@ SPECIAL_MATCHES = {
     # 2 Liga mappings
     "legia warszawa ii": "legia ii warszawa",
     "slask wroclaw ii": "slask ii wroclaw",
+
+    # 3 Liga mappings
+    "polonia sroda wlkp": "polonia sroda wielkopolska",
+    "polonia sroda wielkopolska": "polonia sroda wielkopolska",
 }
 
 
@@ -224,11 +228,17 @@ def normalize_club_name(name):
 
 def comparable_club_name(name):
     normalized = normalize_club_name(name)
-    tokens = [
-        token
-        for token in normalized.split()
-        if token not in CLUB_NAME_STOPWORDS
-    ]
+    tokens = []
+
+    for token in normalized.split():
+        if token in CLUB_NAME_STOPWORDS:
+            continue
+        if token == "wlkp" or token.startswith("wielkopol"):
+            token = "wlkp"
+        if token == "zdr" or token.startswith("zdroj"):
+            token = "zdroj"
+
+        tokens.append(token)
 
     return " ".join(tokens)
 

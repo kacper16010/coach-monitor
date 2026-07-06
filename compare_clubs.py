@@ -165,6 +165,21 @@ def get_ninetyminut_coach(url):
 
         return coach_name, change_date
 
+    trainer_cell = fragment.split("</td>", 1)[0]
+    name_matches = re.findall(
+        r"<b>\s*([^<]+?)\s*</b>",
+        trainer_cell,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    for coach_name in reversed(name_matches):
+        coach_name = re.sub(r"<.*?>", "", coach_name).strip()
+        coach_name = html.unescape(coach_name)
+        coach_name = re.sub(r"\s+[A-Z]{3}(\/[A-Z]{3})*$", "", coach_name).strip()
+
+        if coach_name:
+            return coach_name, None
+
     return None, None
 
 
