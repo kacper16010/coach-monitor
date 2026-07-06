@@ -3,6 +3,7 @@ import unicodedata
 import time
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import requests
 APP_VERSION = "0.0.1-dev"
@@ -43,6 +44,15 @@ FOURTH_LEAGUE_REGIONS = [
     "Wielkopolskie",
     "Zachodniopomorskie",
 ]
+
+
+DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
+REFRESHABLE_LEAGUES = {"Ekstraklasa", "1 Liga", "2 Liga"}
+REFRESH_POLL_SECONDS = 20
+REFRESH_STALE_AFTER_SECONDS = 30 * 60
+REFRESH_REQUEST_MESSAGE = (
+    "Refresh requested for {league}. Data will update in the background in a few minutes."
+)
 
 
 def normalize_name(name):
@@ -122,51 +132,50 @@ def get_last_checked_for_league(df, league_name, group_name=None):
     if league_df.empty or "last_checked" not in league_df.columns:
         return None
 
-    return str(league_df["last_checked"].iloc[0])
+    checked_values = league_df["last_checked"].dropna().astype(str)
+    if checked_values.empty:
+        return None
 
-def show_refresh_overlay(league_name: str):
-    st.markdown(
+    return str(checked_values.max())
+
+
+def get_global_last_checked(df):
+    if df.empty or "last_checked" not in df.columns:
+        return ""
+
+    parsed = pd.to_datetime(df["last_checked"], errors="coerce")
+    if parsed.notna().any():
+        return parsed.max().strftime("%Y-%m-%d %H:%M:%S")
+
+    checked_values = df["last_checked"].dropna().astype(str)
+    if checked_values.empty:
+        return ""
+
+    return str(checked_values.max())
+
+
+def ensure_refresh_state():
+    if "refresh_requests" not in st.session_state:
+        st.session_state.refresh_requests = {}
+
+
+def get_refresh_key(league_name, group_name=None):
+    if group_name is None:
+        return league_name
+
+    return f"{league_name}:{group_name}"
+
+
+def schedule_refresh_poll(seconds=REFRESH_POLL_SECONDS):
+    components.html(
         f"""
-        <style>
-        .refresh-overlay {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(255, 255, 255, 0.82);
-            z-index: 999999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            font-family: sans-serif;
-        }}
-
-        .spinner {{
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #16a34a;
-            border-radius: 50%;
-            width: 56px;
-            height: 56px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 18px;
-        }}
-
-        @keyframes spin {{
-            0% {{ transform: rotate(0deg); }}
-            100% {{ transform: rotate(360deg); }}
-        }}
-        </style>
-
-        <div class="refresh-overlay">
-            <div class="spinner"></div>
-            <h2>Refreshing {league_name}</h2>
-            <p>Updating data from SuperScore and 90minut.</p>
-            <p>This may take a few minutes. Please do not close this page.</p>
-        </div>
+        <script>
+        window.setTimeout(function () {{
+            window.parent.location.reload();
+        }}, {seconds * 1000});
+        </script>
         """,
-        unsafe_allow_html=True,
+        height=0,
     )
 
 
@@ -181,28 +190,47 @@ def show_league_page(df, league_name, group_name=None):
 
     st.header(title)
 
-    if "refreshing_league" not in st.session_state:
-        st.session_state.refreshing_league = None
-
-    if "refresh_started_last_checked" not in st.session_state:
-        st.session_state.refresh_started_last_checked = None
-
-    if "refresh_started_at" not in st.session_state:
-        st.session_state.refresh_started_at = None
-
+    ensure_refresh_state()
+    refresh_key = get_refresh_key(league_name, group_name)
     current_last_checked = get_last_checked_for_league(df, league_name, group_name)
-    is_refreshing = st.session_state.refreshing_league == league_name
+    refresh_request = st.session_state.refresh_requests.get(refresh_key)
+    refresh_completed = False
 
-    if league_name in ["Ekstraklasa", "1 Liga", "2 Liga"]:
+    if refresh_request:
+        previous_last_checked = refresh_request.get("started_last_checked")
+        if (
+            previous_last_checked is not None
+            and current_last_checked is not None
+            and current_last_checked != previous_last_checked
+        ):
+            st.session_state.refresh_requests.pop(refresh_key, None)
+            refresh_request = None
+            refresh_completed = True
+
+    if league_name in REFRESHABLE_LEAGUES and group_name is None:
         if st.button(
             f"🔄 Refresh {league_name}",
-            disabled=st.session_state.refreshing_league is not None,
+            key=f"refresh_{refresh_key}",
         ):
-            st.session_state.refresh_started_last_checked = current_last_checked
-            st.session_state.refresh_started_at = time.time()
-            trigger_github_refresh(league_name)
-            st.session_state.refreshing_league = league_name
-            st.rerun()
+            if trigger_github_refresh(league_name):
+                st.session_state.refresh_requests[refresh_key] = {
+                    "started_last_checked": current_last_checked,
+                    "started_at": time.time(),
+                }
+                st.rerun()
+
+    if refresh_completed:
+        st.success(f"{league_name} has been updated successfully.")
+
+    if refresh_request:
+        elapsed_seconds = int(time.time() - refresh_request.get("started_at", time.time()))
+        st.info(REFRESH_REQUEST_MESSAGE.format(league=league_name))
+        if elapsed_seconds >= REFRESH_STALE_AFTER_SECONDS:
+            st.warning(
+                "This refresh is taking longer than usual. You can request it again, "
+                "or leave this page open while the background workflow finishes."
+            )
+        schedule_refresh_poll()
 
     if league_df.empty:
         st.info("No data available yet.")
@@ -225,27 +253,9 @@ def show_league_page(df, league_name, group_name=None):
         hide_index=True,
     )
 
-    if is_refreshing:
-        previous_last_checked = st.session_state.refresh_started_last_checked
-
-        if (
-            previous_last_checked is not None
-            and current_last_checked is not None
-            and current_last_checked != previous_last_checked
-        ):
-            st.session_state.refreshing_league = None
-            st.session_state.refresh_started_last_checked = None
-            st.session_state.refresh_started_at = None
-            st.success(f"{league_name} has been updated successfully.")
-            st.rerun()
-        else:
-            st.info(f"Refresh requested for {league_name}. Data will update in the background in a few minutes.")
-            time.sleep(15)
-            st.rerun()
-
 def load_data():
-    DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
-    df = pd.read_csv(DATA_URL)
+    data_url = f"{DATA_URL}?t={int(time.time())}"
+    df = pd.read_csv(data_url)
 
     if "group" not in df.columns:
         df["group"] = ""
@@ -279,12 +289,38 @@ def get_next_refresh():
 
     return next_hour.strftime("%H:%M")
 
+
+def get_github_actions_token_info():
+    raw_token = os.environ.get("GITHUB_ACTIONS_TOKEN")
+    token = raw_token.strip() if raw_token else ""
+
+    return token or None, {
+        "present": raw_token is not None,
+        "non_empty": bool(token),
+        "length": len(token),
+    }
+
+
+def get_github_actions_token():
+    token, _ = get_github_actions_token_info()
+    return token
+
+
 def trigger_github_refresh(league):
-    token = os.getenv("GITHUB_ACTIONS_TOKEN")
+    token, token_info = get_github_actions_token_info()
 
     if not token:
-        st.error("GitHub refresh token is not configured.")
-        return
+        st.error(
+            "GitHub refresh token is not configured. Add GITHUB_ACTIONS_TOKEN "
+            "to the Render environment variables and redeploy the app."
+        )
+        st.caption(
+            "Token diagnostics: "
+            f"present={token_info['present']}, "
+            f"non_empty={token_info['non_empty']}, "
+            f"length={token_info['length']}"
+        )
+        return False
 
     url = "https://api.github.com/repos/kacper16010/coach-monitor/actions/workflows/update-data.yml/dispatches"
 
@@ -303,10 +339,18 @@ def trigger_github_refresh(league):
     response = requests.post(url, headers=headers, json=payload)
 
     if response.status_code == 204:
-        st.success(f"Refresh requested for: {league}. Data should update in a few minutes.")
+        return True
+
+    if response.status_code in (401, 403):
+        st.error(
+            f"Refresh request failed: {response.status_code}. "
+            "The token was found, but GitHub rejected it. Check repository access "
+            "and Actions: read/write permission."
+        )
     else:
         st.error(f"Refresh request failed: {response.status_code}")
-        st.text(response.text)
+    st.text(response.text)
+    return False
 
 st.set_page_config(page_title="Coach Monitor", layout="wide")
 
@@ -317,26 +361,16 @@ with left:
 
 with right:
     st.caption(f"Version {APP_VERSION}")
-if "refreshing_league" not in st.session_state:
-    st.session_state.refreshing_league = None
-
-if "refresh_started_last_checked" not in st.session_state:
-    st.session_state.refresh_started_last_checked = None
-
-if "refresh_started_at" not in st.session_state:
-    st.session_state.refresh_started_at = None
+ensure_refresh_state()
 
 
 st.caption("Data source: SuperScore and 90minut. Last update is shown in each league tab.")
 
 df = load_data()
 
-global_last_checked = ""
+global_last_checked = get_global_last_checked(df)
 
-if not df.empty and "last_checked" in df.columns:
-    global_last_checked = str(df["last_checked"].max())
-
-st.info(f"🕒 Last refresh: {global_last_checked}")
+st.info(f"Last full refresh: {global_last_checked}")
 
   
 all_differences = df[df["is_difference_calculated"] == True]
@@ -424,3 +458,10 @@ elif page == "📧 Notifications":
 elif page == "⚙️ Settings":
     st.header("Settings")
     st.write("Automatic refresh: not configured yet")
+    _, token_info = get_github_actions_token_info()
+    st.write(
+        "GITHUB_ACTIONS_TOKEN env: "
+        f"present={token_info['present']}, "
+        f"non_empty={token_info['non_empty']}, "
+        f"length={token_info['length']}"
+    )
