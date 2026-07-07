@@ -1,22 +1,4 @@
 league,group,club,superscore_url,ninetyminut_url
-Ekstraklasa,,Cracovia,https://superscore.live/pl-PL/pilka-nozna/druzyny/cracovia/bdl64xfh/sklad,http://www.90minut.pl/skarb.php?id_klub=51&id_sezon=109
-Ekstraklasa,,GKS Katowice,https://superscore.live/pl-PL/pilka-nozna/druzyny/gks-katowice/2nvrdsg4/sklad,http://www.90minut.pl/skarb.php?id_klub=81&id_sezon=109
-Ekstraklasa,,Górnik Zabrze,https://superscore.live/pl-PL/pilka-nozna/druzyny/gornik-zabrze/1482nb5k/sklad,http://www.90minut.pl/skarb.php?id_klub=101&id_sezon=109
-Ekstraklasa,,Jagiellonia Białystok,https://superscore.live/pl-PL/pilka-nozna/druzyny/jagiellonia-bialystok/bsvhrzud/sklad,http://www.90minut.pl/skarb.php?id_klub=132&id_sezon=109
-Ekstraklasa,,Korona Kielce,https://superscore.live/pl-PL/pilka-nozna/druzyny/korona-kielce/ufctwfp8/sklad,http://www.90minut.pl/skarb.php?id_klub=146&id_sezon=109
-Ekstraklasa,,Lech Poznań,https://superscore.live/pl-PL/pilka-nozna/druzyny/lech-poznan/rssvbkoj/sklad,http://www.90minut.pl/skarb.php?id_klub=169&id_sezon=109
-Ekstraklasa,,Legia Warszawa,https://superscore.live/pl-PL/pilka-nozna/druzyny/legia-warszawa/4bfrc4lo/sklad,http://www.90minut.pl/skarb.php?id_klub=171&id_sezon=109
-Ekstraklasa,,Motor Lublin,https://superscore.live/pl-PL/pilka-nozna/druzyny/motor-lublin/3lk0gx0a/sklad,http://www.90minut.pl/skarb.php?id_klub=226&id_sezon=109
-Ekstraklasa,,Piast Gliwice,https://superscore.live/pl-PL/pilka-nozna/druzyny/piast-gliwice/jnayrw86/sklad,http://www.90minut.pl/skarb.php?id_klub=273&id_sezon=109
-Ekstraklasa,,Pogoń Szczecin,https://superscore.live/pl-PL/pilka-nozna/druzyny/pogon-szczecin/aja3mfsn/sklad,http://www.90minut.pl/skarb.php?id_klub=297&id_sezon=109
-Ekstraklasa,,Radomiak Radom,https://superscore.live/pl-PL/pilka-nozna/druzyny/radomiak-radom/2ybq4j01/sklad,http://www.90minut.pl/skarb.php?id_klub=328&id_sezon=109
-Ekstraklasa,,Raków Częstochowa,https://superscore.live/pl-PL/pilka-nozna/druzyny/rakow-czestochowa/frj5jv3a/sklad,http://www.90minut.pl/skarb.php?id_klub=330&id_sezon=109
-Ekstraklasa,,Śląsk Wrocław,https://superscore.live/pl-PL/pilka-nozna/druzyny/slask-wroclaw/e5v0x3xq/sklad,http://www.90minut.pl/skarb.php?id_klub=390&id_sezon=109
-Ekstraklasa,,Widzew Łódź,https://superscore.live/pl-PL/pilka-nozna/druzyny/widzew-lodz/iwyq7pyd/sklad,http://www.90minut.pl/skarb.php?id_klub=419&id_sezon=109
-Ekstraklasa,,Wieczysta Kraków,https://superscore.live/pl-PL/pilka-nozna/druzyny/wieczysta-krakow/6llobbwp/sklad,http://www.90minut.pl/skarb.php?id_klub=1786&id_sezon=109
-Ekstraklasa,,Wisła Kraków,https://superscore.live/pl-PL/pilka-nozna/druzyny/wisla-krakow/1f2fumpy/sklad,http://www.90minut.pl/skarb.php?id_klub=423&id_sezon=109
-Ekstraklasa,,Wisła Płock,https://superscore.live/pl-PL/pilka-nozna/druzyny/wisla-plock/zuw594te/sklad,http://www.90minut.pl/skarb.php?id_klub=424&id_sezon=109
-Ekstraklasa,,Zagłębie Lubin,https://superscore.live/pl-PL/pilka-nozna/druzyny/zaglebie-lubin/8dufx2s2/sklad,http://www.90minut.pl/skarb.php?id_klub=439&id_sezon=109
 1 Liga,,Arka Gdynia,https://superscore.live/pl-PL/pilka-nozna/druzyny/arka-gdynia/wfeiv8xk/sklad,http://www.90minut.pl/skarb.php?id_klub=7&id_sezon=109
 1 Liga,,Chrobry Głogów,https://superscore.live/pl-PL/pilka-nozna/druzyny/chrobry-glogow/6mzmuywk/sklad,http://www.90minut.pl/skarb.php?id_klub=44&id_sezon=109
 1 Liga,,Lechia Gdańsk,https://superscore.live/pl-PL/pilka-nozna/druzyny/lechia-gdansk/n33elfl8/sklad,http://www.90minut.pl/skarb.php?id_klub=165&id_sezon=109
@@ -107,3 +89,21 @@ Ekstraklasa,,Zagłębie Lubin,https://superscore.live/pl-PL/pilka-nozna/druzyny/
 3 Liga,Group 4,Wisła II Kraków,https://superscore.live/pl-PL/pilka-nozna/druzyny/wisla-krakow-ii/zdpgzes2/sklad,http://www.90minut.pl/skarb.php?id_klub=1797&id_sezon=109
 3 Liga,Group 4,Wiślanie Skawina,https://superscore.live/pl-PL/pilka-nozna/druzyny/wislanie-skawina/6j29vqm5/sklad,http://www.90minut.pl/skarb.php?id_klub=26781&id_sezon=109
 3 Liga,Group 4,Wisłoka Dębica,https://superscore.live/pl-PL/pilka-nozna/druzyny/wisloka-debica/qkiygb38/sklad,http://www.90minut.pl/skarb.php?id_klub=427&id_sezon=109
+Ekstraklasa,,Cracovia,https://superscore.live/pl-PL/pilka-nozna/druzyny/cracovia/bdl64xfh/sklad,http://www.90minut.pl/skarb.php?id_klub=51&id_sezon=109
+Ekstraklasa,,GKS Katowice,https://superscore.live/pl-PL/pilka-nozna/druzyny/gks-katowice/2nvrdsg4/sklad,http://www.90minut.pl/skarb.php?id_klub=81&id_sezon=109
+Ekstraklasa,,Górnik Zabrze,https://superscore.live/pl-PL/pilka-nozna/druzyny/gornik-zabrze/1482nb5k/sklad,http://www.90minut.pl/skarb.php?id_klub=101&id_sezon=109
+Ekstraklasa,,Jagiellonia Białystok,https://superscore.live/pl-PL/pilka-nozna/druzyny/jagiellonia-bialystok/bsvhrzud/sklad,http://www.90minut.pl/skarb.php?id_klub=132&id_sezon=109
+Ekstraklasa,,Korona Kielce,https://superscore.live/pl-PL/pilka-nozna/druzyny/korona-kielce/ufctwfp8/sklad,http://www.90minut.pl/skarb.php?id_klub=146&id_sezon=109
+Ekstraklasa,,Lech Poznań,https://superscore.live/pl-PL/pilka-nozna/druzyny/lech-poznan/rssvbkoj/sklad,http://www.90minut.pl/skarb.php?id_klub=169&id_sezon=109
+Ekstraklasa,,Legia Warszawa,https://superscore.live/pl-PL/pilka-nozna/druzyny/legia-warszawa/4bfrc4lo/sklad,http://www.90minut.pl/skarb.php?id_klub=171&id_sezon=109
+Ekstraklasa,,Motor Lublin,https://superscore.live/pl-PL/pilka-nozna/druzyny/motor-lublin/3lk0gx0a/sklad,http://www.90minut.pl/skarb.php?id_klub=226&id_sezon=109
+Ekstraklasa,,Piast Gliwice,https://superscore.live/pl-PL/pilka-nozna/druzyny/piast-gliwice/jnayrw86/sklad,http://www.90minut.pl/skarb.php?id_klub=273&id_sezon=109
+Ekstraklasa,,Pogoń Szczecin,https://superscore.live/pl-PL/pilka-nozna/druzyny/pogon-szczecin/aja3mfsn/sklad,http://www.90minut.pl/skarb.php?id_klub=297&id_sezon=109
+Ekstraklasa,,Radomiak Radom,https://superscore.live/pl-PL/pilka-nozna/druzyny/radomiak-radom/2ybq4j01/sklad,http://www.90minut.pl/skarb.php?id_klub=328&id_sezon=109
+Ekstraklasa,,Raków Częstochowa,https://superscore.live/pl-PL/pilka-nozna/druzyny/rakow-czestochowa/frj5jv3a/sklad,http://www.90minut.pl/skarb.php?id_klub=330&id_sezon=109
+Ekstraklasa,,Śląsk Wrocław,https://superscore.live/pl-PL/pilka-nozna/druzyny/slask-wroclaw/e5v0x3xq/sklad,http://www.90minut.pl/skarb.php?id_klub=390&id_sezon=109
+Ekstraklasa,,Widzew Łódź,https://superscore.live/pl-PL/pilka-nozna/druzyny/widzew-lodz/iwyq7pyd/sklad,http://www.90minut.pl/skarb.php?id_klub=419&id_sezon=109
+Ekstraklasa,,Wieczysta Kraków,https://superscore.live/pl-PL/pilka-nozna/druzyny/wieczysta-krakow/6llobbwp/sklad,http://www.90minut.pl/skarb.php?id_klub=1786&id_sezon=109
+Ekstraklasa,,Wisła Kraków,https://superscore.live/pl-PL/pilka-nozna/druzyny/wisla-krakow/1f2fumpy/sklad,http://www.90minut.pl/skarb.php?id_klub=423&id_sezon=109
+Ekstraklasa,,Wisła Płock,https://superscore.live/pl-PL/pilka-nozna/druzyny/wisla-plock/zuw594te/sklad,http://www.90minut.pl/skarb.php?id_klub=424&id_sezon=109
+Ekstraklasa,,Zagłębie Lubin,https://superscore.live/pl-PL/pilka-nozna/druzyny/zaglebie-lubin/8dufx2s2/sklad,http://www.90minut.pl/skarb.php?id_klub=439&id_sezon=109
