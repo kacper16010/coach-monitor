@@ -183,7 +183,32 @@ def get_ninetyminut_coach(url):
     return None, None
 
 
-def process_club(browser, club, last_checked):
+def result_key(row):
+    return (
+        row.get("league", ""),
+        row.get("group", ""),
+        row.get("club", ""),
+    )
+
+
+def get_superscore_change_date(previous_row, superscore_coach, last_checked):
+    if not previous_row:
+        return ""
+
+    previous_change_date = previous_row.get("superscore_change_date", "")
+
+    if not superscore_coach:
+        return previous_change_date
+
+    previous_coach = previous_row.get("superscore_coach")
+
+    if normalize_name(previous_coach) != normalize_name(superscore_coach):
+        return last_checked
+
+    return previous_change_date
+
+
+def process_club(browser, club, last_checked, previous_row=None):
     league = club["league"]
     group = club.get("group", "")
     club_name = club["club"]
@@ -210,11 +235,18 @@ def process_club(browser, club, last_checked):
         is_difference = normalize_name(superscore_coach) != normalize_name(ninetyminut_coach)
         result = "DIFFERENCE" if is_difference else "MATCH"
 
+    superscore_change_date = get_superscore_change_date(
+        previous_row,
+        superscore_coach,
+        last_checked,
+    )
+
     return {
         "league": league,
         "group": group,
         "club": club_name,
         "superscore_coach": superscore_coach,
+        "superscore_change_date": superscore_change_date,
         "ninetyminut_coach": ninetyminut_coach,
         "previous_90minut_coach": "",
         "change_date": change_date,
@@ -228,6 +260,7 @@ def print_result(row):
     print("-" * 40)
     print("Club:", row["club"])
     print("SuperScore coach:", row["superscore_coach"])
+    print("SuperScore change date:", row["superscore_change_date"])
     print("90minut coach:", row["ninetyminut_coach"])
     print("90minut change date:", row["change_date"])
     print("Result:", row["result"])
@@ -247,6 +280,17 @@ last_checked = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:
 with open("clubs.csv", "r", encoding="utf-8") as file:
     clubs = list(csv.DictReader(file))
 
+existing_results = []
+
+if os.path.exists("results.csv"):
+    with open("results.csv", "r", encoding="utf-8") as file:
+        existing_results = list(csv.DictReader(file))
+
+previous_results_by_key = {
+    result_key(row): row
+    for row in existing_results
+}
+
 if selected_league != "all":
     clubs = [
         club for club in clubs
@@ -263,29 +307,30 @@ if selected_group != "all":
 if is_partial_refresh and not clubs:
     keep_existing_results = True
     print("No clubs found for partial refresh. Keeping existing results.csv rows.")
-    if os.path.exists("results.csv"):
-        with open("results.csv", "r", encoding="utf-8") as file:
-            results = list(csv.DictReader(file))
-    else:
-        results = []
+    results = existing_results
 else:
     keep_existing_results = False
     results = []
 
 
-def process_club_worker(club, last_checked):
+def process_club_worker(club, last_checked, previous_row):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
 
         try:
-            return process_club(browser, club, last_checked)
+            return process_club(browser, club, last_checked, previous_row)
         finally:
             browser.close()
 
 
 with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
     futures = [
-        executor.submit(process_club_worker, club, last_checked)
+        executor.submit(
+            process_club_worker,
+            club,
+            last_checked,
+            previous_results_by_key.get(result_key(club)),
+        )
         for club in clubs
     ]
 
@@ -299,9 +344,6 @@ results.sort(key=lambda x: (x["league"], x["group"], x["club"]))
 
 
 if is_partial_refresh and not keep_existing_results and os.path.exists("results.csv"):
-    with open("results.csv", "r", encoding="utf-8") as file:
-        existing_results = list(csv.DictReader(file))
-
     existing_results = [
         row for row in existing_results
         if not (
@@ -321,6 +363,7 @@ with open("results.csv", "w", encoding="utf-8", newline="") as file:
         "group",
         "club",
         "superscore_coach",
+        "superscore_change_date",
         "ninetyminut_coach",
         "previous_90minut_coach",
         "change_date",

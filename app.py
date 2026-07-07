@@ -110,6 +110,7 @@ def prepare_table(dataframe):
     columns_to_show = [
         "club",
         "superscore_coach",
+        "superscore_change_date",
         "ninetyminut_coach",
         "change_date",
         "is_difference_calculated",
@@ -118,6 +119,7 @@ def prepare_table(dataframe):
     column_names = {
         "club": "Club",
         "superscore_coach": "SuperScore Coach",
+        "superscore_change_date": "SuperScore Change Date",
         "ninetyminut_coach": "90minut Coach",
         "change_date": "Change Date",
         "is_difference_calculated": "Is Difference",
@@ -394,8 +396,11 @@ def load_data():
 
     if "group" not in df.columns:
         df["group"] = ""
+    if "superscore_change_date" not in df.columns:
+        df["superscore_change_date"] = ""
 
     df["group"] = df["group"].fillna("")
+    df["superscore_change_date"] = df["superscore_change_date"].fillna("")
 
     df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
     df = df.sort_values(by="change_date_parsed", ascending=False)
