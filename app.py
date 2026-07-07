@@ -2,6 +2,7 @@ import re
 import unicodedata
 import time
 import io
+import base64
 import pandas as pd
 import streamlit as st
 import os
@@ -47,6 +48,7 @@ FOURTH_LEAGUE_REGIONS = [
 
 DATA_URL = "https://raw.githubusercontent.com/kacper16010/coach-monitor/data/results.csv"
 DATA_BRANCH_API_URL = "https://api.github.com/repos/kacper16010/coach-monitor/branches/data"
+RESULTS_CONTENTS_API_URL = "https://api.github.com/repos/kacper16010/coach-monitor/contents/results.csv"
 RAW_DATA_URL_TEMPLATE = "https://raw.githubusercontent.com/kacper16010/coach-monitor/{sha}/results.csv"
 REFRESHABLE_LEAGUES = {"Ekstraklasa", "1 Liga", "2 Liga", "3 Liga", "4 Liga"}
 REFRESH_POLL_SECONDS = 20
@@ -106,23 +108,49 @@ def color_rows(row):
     return [""] * len(row)
 
 
+def make_row_key(row):
+    return "|".join([
+        str(row.get("league", "")),
+        str(row.get("group", "")),
+        str(row.get("club", "")),
+    ])
+
+
+def clean_comment(value):
+    if pd.isna(value):
+        return ""
+
+    value = str(value)
+    if value == "-":
+        return ""
+
+    return value.strip()
+
+
 def prepare_table(dataframe):
+    dataframe = dataframe.copy()
+    dataframe["row_key"] = dataframe.apply(make_row_key, axis=1)
+
     columns_to_show = [
+        "row_key",
         "club",
         "superscore_coach",
         "superscore_change_date",
         "ninetyminut_coach",
         "change_date",
         "is_difference_calculated",
+        "comment",
     ]
 
     column_names = {
+        "row_key": "Row Key",
         "club": "Club",
         "superscore_coach": "SuperScore Coach",
         "superscore_change_date": "SuperScore Change Date",
         "ninetyminut_coach": "90minut Coach",
         "change_date": "Change Date",
         "is_difference_calculated": "Is Difference",
+        "comment": "Comment",
     }
 
     table = dataframe[columns_to_show].rename(columns=column_names)
@@ -197,6 +225,65 @@ def read_results_csv_from_data_branch():
     except (requests.RequestException, KeyError, ValueError):
         data_url = f"{DATA_URL}?t={int(time.time())}"
         return pd.read_csv(data_url)
+
+
+def get_results_file_sha():
+    response = requests.get(
+        RESULTS_CONTENTS_API_URL,
+        params={"ref": "data"},
+        headers=get_github_api_headers(),
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()["sha"]
+
+
+def save_results_csv_to_data_branch(df, message):
+    token = get_github_actions_token()
+
+    if not token:
+        st.error("GitHub token is not configured. Cannot save comments.")
+        return False
+
+    csv_content = df.to_csv(index=False)
+    payload = {
+        "message": message,
+        "content": base64.b64encode(csv_content.encode("utf-8")).decode("ascii"),
+        "sha": get_results_file_sha(),
+        "branch": "data",
+    }
+
+    response = requests.put(
+        RESULTS_CONTENTS_API_URL,
+        headers=get_github_api_headers(),
+        json=payload,
+        timeout=20,
+    )
+
+    if response.status_code in (200, 201):
+        return True
+
+    st.error(f"Saving comments failed: {response.status_code}")
+    st.text(response.text)
+    return False
+
+
+def apply_comment_edits(df, edited_table):
+    updated_df = df.copy()
+
+    if "comment" not in updated_df.columns:
+        updated_df["comment"] = ""
+
+    updated_df["row_key"] = updated_df.apply(make_row_key, axis=1)
+    comments_by_key = {
+        row["Row Key"]: clean_comment(row["Comment"])
+        for _, row in edited_table.iterrows()
+    }
+
+    updated_df["comment"] = updated_df["row_key"].map(comments_by_key).fillna(updated_df["comment"])
+    updated_df = updated_df.drop(columns=["row_key"])
+
+    return updated_df
 
 
 def ensure_refresh_state():
@@ -379,12 +466,32 @@ def _show_league_page(df, league_name, group_name=None):
 
     table = prepare_table(league_df)
 
-    st.dataframe(
-        table.style.apply(color_rows, axis=1),
+    edited_table = st.data_editor(
+        table,
         width="stretch",
         height=665,
         hide_index=True,
+        key=f"table_{refresh_key}",
+        disabled=[
+            "Club",
+            "SuperScore Coach",
+            "SuperScore Change Date",
+            "90minut Coach",
+            "Change Date",
+            "Is Difference",
+        ],
+        column_config={
+            "Row Key": None,
+            "Comment": st.column_config.TextColumn("Comment"),
+        },
     )
+
+    if st.button("Save comments", key=f"save_comments_{refresh_key}"):
+        updated_df = apply_comment_edits(df, edited_table)
+
+        if save_results_csv_to_data_branch(updated_df, f"Update comments ({title})"):
+            st.success("Comments saved.")
+            st.rerun()
 
 
 if hasattr(st, "fragment"):
@@ -400,10 +507,13 @@ def load_data():
         df["group"] = ""
     if "superscore_change_date" not in df.columns:
         df["superscore_change_date"] = ""
+    if "comment" not in df.columns:
+        df["comment"] = ""
 
     df["group"] = df["group"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].astype(str).str[:10]
+    df["comment"] = df["comment"].fillna("")
 
     df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
     df = df.sort_values(by="change_date_parsed", ascending=False)
