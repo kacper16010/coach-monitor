@@ -8,6 +8,7 @@ import streamlit as st
 import os
 import requests
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 
 POLISH_MONTHS = {
@@ -140,6 +141,7 @@ def prepare_table(dataframe):
         "change_date",
         "is_difference_calculated",
         "comment",
+        "comment_updated_at",
     ]
 
     column_names = {
@@ -151,6 +153,7 @@ def prepare_table(dataframe):
         "change_date": "Change Date",
         "is_difference_calculated": "Is Difference",
         "comment": "Comment",
+        "comment_updated_at": "Comment Updated At",
     }
 
     table = dataframe[columns_to_show].rename(columns=column_names)
@@ -268,19 +271,38 @@ def save_results_csv_to_data_branch(df, message):
     return False
 
 
-def apply_comment_edits(df, edited_table):
+def format_comment_timestamp():
+    return datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%d.%m.%Y %H:%M")
+
+
+def apply_single_comment_edit(df, row_key, new_comment_value):
+    """Update the comment (and its timestamp) for exactly one club.
+
+    The timestamp only changes when the comment text actually changes -
+    reloading the page, refreshing data, or saving without edits leaves
+    it untouched.
+    """
     updated_df = df.copy()
 
     if "comment" not in updated_df.columns:
         updated_df["comment"] = ""
+    if "comment_updated_at" not in updated_df.columns:
+        updated_df["comment_updated_at"] = ""
 
     updated_df["row_key"] = updated_df.apply(make_row_key, axis=1)
-    comments_by_key = {
-        row["Row Key"]: clean_comment(row["Comment"])
-        for _, row in edited_table.iterrows()
-    }
+    mask = updated_df["row_key"] == row_key
 
-    updated_df["comment"] = updated_df["row_key"].map(comments_by_key).fillna(updated_df["comment"])
+    if mask.any():
+        new_comment = clean_comment(new_comment_value)
+        old_comment = updated_df.loc[mask, "comment"].iloc[0]
+        old_comment = "" if pd.isna(old_comment) else str(old_comment)
+
+        if new_comment != old_comment:
+            updated_df.loc[mask, "comment"] = new_comment
+            updated_df.loc[mask, "comment_updated_at"] = (
+                format_comment_timestamp() if new_comment else ""
+            )
+
     updated_df = updated_df.drop(columns=["row_key"])
 
     return updated_df
@@ -466,31 +488,49 @@ def _show_league_page(df, league_name, group_name=None):
 
     table = prepare_table(league_df)
 
-    edited_table = st.data_editor(
-        table,
+    st.dataframe(
+        table.style.apply(color_rows, axis=1),
         width="stretch",
-        height=665,
+        height=560,
         hide_index=True,
-        key=f"table_{refresh_key}",
-        disabled=[
-            "Club",
-            "SuperScore Coach",
-            "SuperScore Change Date",
-            "90minut Coach",
-            "Change Date",
-            "Is Difference",
-        ],
-        column_config={
-            "Row Key": None,
-            "Comment": st.column_config.TextColumn("Comment"),
-        },
+        column_config={"Row Key": None},
     )
 
-    if st.button("Save comments", key=f"save_comments_{refresh_key}"):
-        updated_df = apply_comment_edits(df, edited_table)
+    st.subheader("Edit comment")
 
-        if save_results_csv_to_data_branch(updated_df, f"Update comments ({title})"):
-            st.success("Comments saved.")
+    club_labels = {
+        row["Row Key"]: row["Club"]
+        for _, row in table.iterrows()
+    }
+
+    selected_row_key = st.selectbox(
+        "Club",
+        options=list(club_labels.keys()),
+        format_func=lambda key: club_labels.get(key, key),
+        key=f"comment_club_select_{refresh_key}",
+    )
+
+    current_row = table[table["Row Key"] == selected_row_key].iloc[0]
+    current_comment = current_row["Comment"]
+    current_comment = "" if current_comment == "-" else current_comment
+    current_updated_at = current_row["Comment Updated At"]
+    current_updated_at = "" if current_updated_at == "-" else current_updated_at
+
+    new_comment = st.text_area(
+        "Comment",
+        value=current_comment,
+        key=f"comment_text_{refresh_key}_{selected_row_key}",
+    )
+
+    if current_updated_at:
+        st.caption(f"Last updated: {current_updated_at}")
+
+    if st.button("Save comment", key=f"save_comment_{refresh_key}_{selected_row_key}"):
+        updated_df = apply_single_comment_edit(df, selected_row_key, new_comment)
+
+        club_name = club_labels.get(selected_row_key, selected_row_key)
+        if save_results_csv_to_data_branch(updated_df, f"Update comment ({club_name})"):
+            st.success("Comment saved.")
             st.rerun()
 
 
@@ -509,11 +549,14 @@ def load_data():
         df["superscore_change_date"] = ""
     if "comment" not in df.columns:
         df["comment"] = ""
+    if "comment_updated_at" not in df.columns:
+        df["comment_updated_at"] = ""
 
     df["group"] = df["group"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].astype(str).str[:10]
     df["comment"] = df["comment"].fillna("")
+    df["comment_updated_at"] = df["comment_updated_at"].fillna("")
 
     df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
     df = df.sort_values(by="change_date_parsed", ascending=False)
@@ -689,6 +732,7 @@ if "Differences" in page:
             width="stretch",
             height=500,
             hide_index=True,
+            column_config={"Row Key": None},
         )
 
 
