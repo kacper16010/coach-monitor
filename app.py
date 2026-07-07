@@ -493,8 +493,35 @@ def _show_league_page(df, league_name, group_name=None):
         width="stretch",
         height=560,
         hide_index=True,
-        column_config={"Row Key": None},
+        column_config={"Row Key": None, "Is Difference": None},
     )
+
+
+if hasattr(st, "fragment"):
+    show_league_page = st.fragment(run_every=f"{REFRESH_POLL_SECONDS}s")(_show_league_page)
+else:
+    show_league_page = _show_league_page
+
+
+def show_comment_editor(df, league_name, group_name=None):
+    """Comment editing UI, rendered outside the auto-refreshing fragment.
+
+    It must live outside show_league_page's st.fragment(run_every=...):
+    that fragment silently reruns every REFRESH_POLL_SECONDS to poll for
+    background data refreshes, which would wipe out whatever the user is
+    currently typing into the comment box before they get a chance to
+    save it.
+    """
+    if group_name is None:
+        league_df = df[df["league"] == league_name]
+    else:
+        league_df = df[(df["league"] == league_name) & (df["group"] == group_name)]
+
+    if league_df.empty:
+        return
+
+    refresh_key = get_refresh_key(league_name, group_name)
+    table = prepare_table(league_df)
 
     st.subheader("Edit comment")
 
@@ -532,12 +559,6 @@ def _show_league_page(df, league_name, group_name=None):
         if save_results_csv_to_data_branch(updated_df, f"Update comment ({club_name})"):
             st.success("Comment saved.")
             st.rerun()
-
-
-if hasattr(st, "fragment"):
-    show_league_page = st.fragment(run_every=f"{REFRESH_POLL_SECONDS}s")(_show_league_page)
-else:
-    show_league_page = _show_league_page
 
 
 def load_data():
@@ -732,30 +753,35 @@ if "Differences" in page:
             width="stretch",
             height=500,
             hide_index=True,
-            column_config={"Row Key": None},
+            column_config={"Row Key": None, "Is Difference": None},
         )
 
 
 elif page == "⚽ Ekstraklasa":
     show_league_page(df, "Ekstraklasa")
+    show_comment_editor(df, "Ekstraklasa")
 
 
 elif page == "⚽ 1 Liga":
     show_league_page(df, "1 Liga")
+    show_comment_editor(df, "1 Liga")
 
 
 elif page == "⚽ 2 Liga":
     show_league_page(df, "2 Liga")
+    show_comment_editor(df, "2 Liga")
 
 
 elif page.startswith("⚽ 3 Liga"):
     group = page.replace("⚽ 3 Liga - ", "")
     show_league_page(df, "3 Liga", group)
+    show_comment_editor(df, "3 Liga", group)
 
 
 elif page.startswith("⚽ 4 Liga"):
     region = page.replace("⚽ 4 Liga - ", "")
     show_league_page(df, "4 Liga", region)
+    show_comment_editor(df, "4 Liga", region)
 
 
 elif page == "📧 Notifications":
