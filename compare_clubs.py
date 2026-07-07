@@ -203,9 +203,9 @@ def get_superscore_change_date(previous_row, superscore_coach, last_checked):
     previous_coach = previous_row.get("superscore_coach")
 
     if normalize_name(previous_coach) != normalize_name(superscore_coach):
-        return last_checked
+        return last_checked[:10]
 
-    return previous_change_date
+    return previous_change_date[:10]
 
 
 def process_club(browser, club, last_checked, previous_row=None):
@@ -228,9 +228,15 @@ def process_club(browser, club, last_checked, previous_row=None):
         change_date = None
         print(f"90minut error for {club_name}: {e}")
 
-    if superscore_coach is None or ninetyminut_coach is None:
+    has_superscore_coach = bool(superscore_coach)
+    has_ninetyminut_coach = bool(ninetyminut_coach)
+
+    if not has_superscore_coach and not has_ninetyminut_coach:
         is_difference = False
         result = "UNKNOWN"
+    elif has_superscore_coach != has_ninetyminut_coach:
+        is_difference = True
+        result = "DIFFERENCE"
     else:
         is_difference = normalize_name(superscore_coach) != normalize_name(ninetyminut_coach)
         result = "DIFFERENCE" if is_difference else "MATCH"

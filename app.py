@@ -125,7 +125,9 @@ def prepare_table(dataframe):
         "is_difference_calculated": "Is Difference",
     }
 
-    return dataframe[columns_to_show].rename(columns=column_names)
+    table = dataframe[columns_to_show].rename(columns=column_names)
+
+    return table.fillna("").replace("", "-")
 
 def get_last_checked_for_league(df, league_name, group_name=None):
     if group_name is None:
@@ -401,6 +403,7 @@ def load_data():
 
     df["group"] = df["group"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].fillna("")
+    df["superscore_change_date"] = df["superscore_change_date"].astype(str).str[:10]
 
     df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
     df = df.sort_values(by="change_date_parsed", ascending=False)
