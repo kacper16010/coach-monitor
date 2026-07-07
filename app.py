@@ -134,9 +134,12 @@ def prepare_table(dataframe):
 
     columns_to_show = [
         "row_key",
+        "league",
+        "group",
         "club",
         "superscore_coach",
         "superscore_change_date",
+        "previous_superscore_coach",
         "ninetyminut_coach",
         "change_date",
         "is_difference_calculated",
@@ -146,9 +149,12 @@ def prepare_table(dataframe):
 
     column_names = {
         "row_key": "Row Key",
+        "league": "League",
+        "group": "Group",
         "club": "Club",
         "superscore_coach": "SuperScore Coach",
         "superscore_change_date": "SuperScore Change Date",
+        "previous_superscore_coach": "Previous SuperScore Coach",
         "ninetyminut_coach": "90minut Coach",
         "change_date": "Change Date",
         "is_difference_calculated": "Is Difference",
@@ -327,6 +333,8 @@ def page_to_slug(page):
 
     if "Differences" in page:
         return "differences"
+    if "Search" in page:
+        return "search"
     if "Ekstraklasa" in page:
         return "ekstraklasa"
     if "1 Liga" in page:
@@ -352,6 +360,25 @@ def slugify(value):
     value = "".join(char for char in value if not unicodedata.combining(char))
     value = re.sub(r"[^a-zA-Z0-9]+", "-", value).strip("-").lower()
     return value or "page"
+
+
+POLISH_CHAR_FOLDS = {
+    "ą": "a", "ć": "c", "ę": "e", "ł": "l", "ń": "n",
+    "ó": "o", "ś": "s", "ź": "z", "ż": "z",
+    "Ą": "a", "Ć": "c", "Ę": "e", "Ł": "l", "Ń": "n",
+    "Ó": "o", "Ś": "s", "Ź": "z", "Ż": "z",
+}
+
+
+def normalize_search_text(value):
+    value = str(value)
+
+    for polish, latin in POLISH_CHAR_FOLDS.items():
+        value = value.replace(polish, latin)
+
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    return value.lower().strip()
 
 
 def get_query_param(name):
@@ -493,7 +520,12 @@ def _show_league_page(df, league_name, group_name=None):
         width="stretch",
         height=560,
         hide_index=True,
-        column_config={"Row Key": None, "Is Difference": None},
+        column_config={
+            "Row Key": None,
+            "Is Difference": None,
+            "League": None,
+            "Group": None,
+        },
     )
 
 
@@ -572,12 +604,15 @@ def load_data():
         df["comment"] = ""
     if "comment_updated_at" not in df.columns:
         df["comment_updated_at"] = ""
+    if "previous_superscore_coach" not in df.columns:
+        df["previous_superscore_coach"] = ""
 
     df["group"] = df["group"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].fillna("")
     df["superscore_change_date"] = df["superscore_change_date"].astype(str).str[:10]
     df["comment"] = df["comment"].fillna("")
     df["comment_updated_at"] = df["comment_updated_at"].fillna("")
+    df["previous_superscore_coach"] = df["previous_superscore_coach"].fillna("")
 
     df["change_date_parsed"] = df["change_date"].apply(parse_polish_date)
     df = df.sort_values(by="change_date_parsed", ascending=False)
@@ -684,7 +719,7 @@ global_last_checked = get_global_last_checked(df)
 
 st.info(f"Last full refresh: {global_last_checked}")
 
-  
+
 all_differences = df[df["is_difference_calculated"] == True]
 
 with st.sidebar:
@@ -698,6 +733,7 @@ with st.sidebar:
 
     navigation_options = [
         diff_label,
+        "🔍 Search",
         "⚽ Ekstraklasa",
         "⚽ 1 Liga",
         "⚽ 2 Liga",
@@ -752,6 +788,35 @@ if "Differences" in page:
             differences_table.style.apply(color_rows, axis=1),
             width="stretch",
             height=500,
+            hide_index=True,
+            column_config={"Row Key": None, "Is Difference": None},
+        )
+
+
+elif "Search" in page:
+    st.header("Search")
+
+    search_query = st.text_input("Club name", placeholder="e.g. Cracovia, Lech, Widzew...")
+
+    if search_query.strip():
+        normalized_query = normalize_search_text(search_query)
+        matches = df[
+            df["club"].apply(normalize_search_text).str.contains(normalized_query, na=False)
+        ]
+    else:
+        matches = df
+
+    if matches.empty:
+        st.info("No clubs match that search.")
+    else:
+        st.caption(f"{len(matches)} club(s) found.")
+
+        search_table = prepare_table(matches)
+
+        st.dataframe(
+            search_table.style.apply(color_rows, axis=1),
+            width="stretch",
+            height=560,
             hide_index=True,
             column_config={"Row Key": None, "Is Difference": None},
         )

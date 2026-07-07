@@ -208,6 +208,32 @@ def get_superscore_change_date(previous_row, superscore_coach, last_checked):
     return previous_change_date[:10]
 
 
+def get_previous_superscore_coach(previous_row, superscore_coach):
+    """Track the SuperScore coach that was replaced.
+
+    Stays untouched while the coach doesn't change. The moment the
+    detected coach differs from last check's coach, the OLD coach name
+    becomes the new "previous coach" and stays there until the next
+    real change. A missing/failed scrape (no superscore_coach detected)
+    is never treated as a change, so a scraping hiccup can't wipe out
+    the tracked history.
+    """
+    if not previous_row:
+        return ""
+
+    stored_previous = previous_row.get("previous_superscore_coach", "")
+
+    if not superscore_coach:
+        return stored_previous
+
+    previous_coach = previous_row.get("superscore_coach")
+
+    if previous_coach and normalize_name(previous_coach) != normalize_name(superscore_coach):
+        return previous_coach
+
+    return stored_previous
+
+
 def process_club(browser, club, last_checked, previous_row=None):
     league = club["league"]
     group = club.get("group", "")
@@ -247,12 +273,18 @@ def process_club(browser, club, last_checked, previous_row=None):
         last_checked,
     )
 
+    previous_superscore_coach = get_previous_superscore_coach(
+        previous_row,
+        superscore_coach,
+    )
+
     return {
         "league": league,
         "group": group,
         "club": club_name,
         "superscore_coach": superscore_coach,
         "superscore_change_date": superscore_change_date,
+        "previous_superscore_coach": previous_superscore_coach,
         "ninetyminut_coach": ninetyminut_coach,
         "previous_90minut_coach": "",
         "change_date": change_date,
@@ -372,6 +404,7 @@ with open("results.csv", "w", encoding="utf-8", newline="") as file:
         "club",
         "superscore_coach",
         "superscore_change_date",
+        "previous_superscore_coach",
         "ninetyminut_coach",
         "previous_90minut_coach",
         "change_date",
