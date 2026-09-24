@@ -211,7 +211,12 @@ def result_key(row):
     )
 
 
-def get_superscore_history(previous_row, superscore_coach, last_checked):
+def get_superscore_history(
+    previous_row,
+    superscore_coach,
+    last_checked,
+    read_succeeded=True,
+):
     """Reset legacy history once, then record every detected change immediately."""
     if not previous_row:
         return {
@@ -246,20 +251,12 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
     confirmed_coach = str(
         previous_row.get("confirmed_superscore_coach", "") or ""
     ).strip()
-    if not superscore_coach:
+
+    if not read_succeeded:
         return {
             "change_date": stored_change_date,
             "previous_coach": stored_previous,
             "confirmed_coach": confirmed_coach,
-            "pending_coach": "",
-            "history_version": SUPERSCORE_HISTORY_VERSION,
-        }
-
-    if not confirmed_coach:
-        return {
-            "change_date": "",
-            "previous_coach": "",
-            "confirmed_coach": superscore_coach,
             "pending_coach": "",
             "history_version": SUPERSCORE_HISTORY_VERSION,
         }
@@ -275,8 +272,8 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
 
     return {
         "change_date": last_checked[:10],
-        "previous_coach": confirmed_coach,
-        "confirmed_coach": superscore_coach,
+        "previous_coach": confirmed_coach or stored_previous,
+        "confirmed_coach": superscore_coach or "",
         "pending_coach": "",
         "history_version": SUPERSCORE_HISTORY_VERSION,
     }
@@ -291,8 +288,10 @@ def process_club(browser, club, last_checked, previous_row=None):
 
     try:
         superscore_coach = get_superscore_coach(browser, superscore_url)
+        superscore_read_succeeded = True
     except Exception as e:
         superscore_coach = None
+        superscore_read_succeeded = False
         print(f"SuperScore error for {club_name}: {e}")
 
     try:
@@ -319,6 +318,7 @@ def process_club(browser, club, last_checked, previous_row=None):
         previous_row,
         superscore_coach,
         last_checked,
+        superscore_read_succeeded,
     )
 
     return {
