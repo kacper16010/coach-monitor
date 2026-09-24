@@ -173,18 +173,38 @@ def prepare_table(dataframe):
 def render_results_table(dataframe, show_league=False):
     columns = []
     if show_league:
-        columns.extend([("league", "League"), ("group", "Group")])
+        columns.extend([
+            ("league", "League", "context-column"),
+            ("group", "Group", "context-column"),
+        ])
     columns.extend([
-        ("club", "Club"),
-        ("superscore_coach", "SuperScore Coach"),
-        ("superscore_change_date", "SuperScore Change Date"),
-        ("previous_superscore_coach", "Previous SuperScore Coach"),
-        ("ninetyminut_coach", "90minut Coach"),
-        ("change_date", "Change Date"),
-        ("comment", "Comment"),
+        ("club", "Club", "club-column"),
+        ("previous_superscore_coach", "Previous Coach", "history-column"),
+        ("superscore_change_date", "Change Date", "history-date-column"),
+        ("superscore_coach", "SuperScore Coach", "current-coach current-start"),
+        ("ninetyminut_coach", "90minut Coach", "current-coach current-end"),
+        ("change_date", "Change Date", "ninety-date-column"),
+        ("comment", "Comment", "comment-column"),
     ])
 
-    header = "".join(f"<th>{html_lib.escape(label)}</th>" for _, label in columns)
+    context_group = '<th colspan="2">Competition</th>' if show_league else ""
+    group_header = (
+        f'{context_group}<th rowspan="2" class="club-column">Club</th>'
+        '<th colspan="2">SuperScore History</th>'
+        '<th colspan="2" class="current-group">Current Comparison</th>'
+        '<th colspan="1">90minut Info</th>'
+        '<th rowspan="2">Notes</th>'
+    )
+    column_header = ""
+    if show_league:
+        column_header += "<th>League</th><th>Group</th>"
+    column_header += (
+        '<th class="history-column">Previous Coach</th>'
+        '<th class="history-date-column">Change Date</th>'
+        '<th class="current-coach current-start">SuperScore Coach</th>'
+        '<th class="current-coach current-end">90minut Coach</th>'
+        '<th class="ninety-date-column">Change Date</th>'
+    )
     body_rows = []
 
     for _, row in dataframe.iterrows():
@@ -196,7 +216,7 @@ def render_results_table(dataframe, show_league=False):
             row_class = ""
         cells = []
 
-        for column, _ in columns:
+        for column, _, css_class in columns:
             value = row.get(column, "")
             value = "" if pd.isna(value) else str(value).strip()
 
@@ -215,10 +235,14 @@ def render_results_table(dataframe, show_league=False):
                     else ""
                 )
                 cells.append(
-                    f"<td><div>{comment_text}</div>{timestamp_html}{ignored_html}</td>"
+                    f'<td class="{css_class}"><div>{comment_text}</div>'
+                    f"{timestamp_html}{ignored_html}</td>"
                 )
             else:
-                cells.append(f"<td>{html_lib.escape(value) if value else '-'}</td>")
+                cells.append(
+                    f'<td class="{css_class}">'
+                    f"{html_lib.escape(value) if value else '-'}</td>"
+                )
 
         body_rows.append(f'<tr class="{row_class}">{"".join(cells)}</tr>')
 
@@ -226,7 +250,10 @@ def render_results_table(dataframe, show_league=False):
         f"""
         <div class="coach-monitor-table-wrap">
             <table class="coach-monitor-table">
-                <thead><tr>{header}</tr></thead>
+                <thead>
+                    <tr class="coach-monitor-group-header">{group_header}</tr>
+                    <tr class="coach-monitor-column-header">{column_header}</tr>
+                </thead>
                 <tbody>{''.join(body_rows)}</tbody>
             </table>
         </div>
@@ -245,18 +272,52 @@ def render_results_table(dataframe, show_league=False):
             }}
             .coach-monitor-table th {{
                 position: sticky;
-                top: 0;
                 z-index: 1;
                 background: #262730;
                 color: #ffffff;
                 text-align: left;
                 font-weight: 600;
             }}
+            .coach-monitor-group-header th {{
+                top: 0;
+                height: 1.8rem;
+                padding-top: 0.35rem;
+                padding-bottom: 0.35rem;
+                background: #18181b;
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 0;
+                text-align: center;
+            }}
+            .coach-monitor-column-header th {{
+                top: 2.5rem;
+            }}
+            .coach-monitor-group-header th[rowspan="2"] {{
+                text-align: left;
+                vertical-align: middle;
+            }}
             .coach-monitor-table th,
             .coach-monitor-table td {{
                 padding: 0.55rem 0.65rem;
                 border-bottom: 1px solid rgba(49, 51, 63, 0.12);
                 vertical-align: top;
+            }}
+            .coach-monitor-table td.club-column {{
+                font-weight: 700;
+            }}
+            .coach-monitor-table td.history-column,
+            .coach-monitor-table td.history-date-column {{
+                font-size: 0.82rem;
+                opacity: 0.72;
+            }}
+            .coach-monitor-table td.current-coach {{
+                font-weight: 700;
+            }}
+            .coach-monitor-table .current-start {{
+                border-left: 2px solid rgba(148, 163, 184, 0.7);
+            }}
+            .coach-monitor-table .current-end {{
+                border-right: 2px solid rgba(148, 163, 184, 0.7);
             }}
             .coach-monitor-table tr.coach-monitor-difference td {{
                 background: #dc2626;

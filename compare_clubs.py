@@ -20,6 +20,8 @@ COACH_ALIASES = {
     "wladyslaw lupashko": "wladyslaw lupaszko",
 }
 
+SUPERSCORE_HISTORY_VERSION = "2"
+
 
 MAX_WORKERS = 10
 
@@ -224,6 +226,24 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
             "previous_coach": "",
             "confirmed_coach": superscore_coach or "",
             "pending_coach": "",
+            "history_version": SUPERSCORE_HISTORY_VERSION,
+        }
+
+    history_version = str(
+        previous_row.get("superscore_history_version", "") or ""
+    ).strip()
+    if history_version != SUPERSCORE_HISTORY_VERSION:
+        baseline_coach = (
+            superscore_coach
+            or previous_row.get("superscore_coach", "")
+            or ""
+        )
+        return {
+            "change_date": "",
+            "previous_coach": "",
+            "confirmed_coach": baseline_coach,
+            "pending_coach": "",
+            "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
     stored_change_date = str(
@@ -243,6 +263,7 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
             "previous_coach": stored_previous,
             "confirmed_coach": confirmed_coach,
             "pending_coach": pending_coach,
+            "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
     if not confirmed_coach:
@@ -251,6 +272,7 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
             "previous_coach": "",
             "confirmed_coach": superscore_coach,
             "pending_coach": "",
+            "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
     if coach_names_match(confirmed_coach, superscore_coach):
@@ -259,6 +281,7 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
             "previous_coach": stored_previous,
             "confirmed_coach": confirmed_coach,
             "pending_coach": "",
+            "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
     if pending_coach and coach_names_match(pending_coach, superscore_coach):
@@ -267,6 +290,7 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
             "previous_coach": confirmed_coach,
             "confirmed_coach": superscore_coach,
             "pending_coach": "",
+            "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
     return {
@@ -274,6 +298,7 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
         "previous_coach": stored_previous,
         "confirmed_coach": confirmed_coach,
         "pending_coach": superscore_coach,
+        "history_version": SUPERSCORE_HISTORY_VERSION,
     }
 
 
@@ -325,6 +350,7 @@ def process_club(browser, club, last_checked, previous_row=None):
         "previous_superscore_coach": superscore_history["previous_coach"],
         "confirmed_superscore_coach": superscore_history["confirmed_coach"],
         "pending_superscore_coach": superscore_history["pending_coach"],
+        "superscore_history_version": superscore_history["history_version"],
         "ninetyminut_coach": ninetyminut_coach,
         "previous_90minut_coach": "",
         "change_date": change_date,
@@ -447,6 +473,7 @@ with open("results.csv", "w", encoding="utf-8", newline="") as file:
         "previous_superscore_coach",
         "confirmed_superscore_coach",
         "pending_superscore_coach",
+        "superscore_history_version",
         "ninetyminut_coach",
         "previous_90minut_coach",
         "change_date",
