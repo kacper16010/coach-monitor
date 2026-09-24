@@ -810,10 +810,12 @@ def _show_league_page(df, league_name, group_name=None):
         df = load_data()
 
     if group_name is None:
-        league_df = df[df["league"] == league_name]
+        league_df = df[df["league"] == league_name].sort_values(by="club")
         title = league_name
     else:
-        league_df = df[(df["league"] == league_name) & (df["group"] == group_name)]
+        league_df = df[
+            (df["league"] == league_name) & (df["group"] == group_name)
+        ].sort_values(by="club")
         title = f"{league_name} - {group_name}"
 
     st.header(title)
@@ -1303,6 +1305,7 @@ elif "Search" in page:
     if matches.empty:
         st.info("No clubs match that search.")
     else:
+        matches = matches.sort_values(by=["league", "group", "club"])
         st.caption(f"{len(matches)} club(s) found.")
 
         render_results_table(matches, show_league=True)

@@ -50,6 +50,19 @@ def normalize_name(name):
     return name
 
 
+def coach_names_match(first_name, second_name):
+    first = normalize_name(first_name)
+    second = normalize_name(second_name)
+
+    if not first or not second:
+        return first == second
+
+    if first == second:
+        return True
+
+    return sorted(first.split()) == sorted(second.split())
+
+
 def get_superscore_coach(browser, url):
     if not url:
         return None
@@ -196,47 +209,72 @@ def result_key(row):
     )
 
 
-def get_superscore_change_date(previous_row, superscore_coach, last_checked):
-    if not previous_row:
-        return ""
+def get_superscore_history(previous_row, superscore_coach, last_checked):
+    """Confirm a coach change twice before adding it to history.
 
-    previous_change_date = previous_row.get("superscore_change_date", "")
-
-    if not superscore_coach:
-        return previous_change_date
-
-    previous_coach = previous_row.get("superscore_coach")
-
-    if normalize_name(previous_coach) != normalize_name(superscore_coach):
-        return last_checked[:10]
-
-    return previous_change_date[:10]
-
-
-def get_previous_superscore_coach(previous_row, superscore_coach):
-    """Track the SuperScore coach that was replaced.
-
-    Stays untouched while the coach doesn't change. The moment the
-    detected coach differs from last check's coach, the OLD coach name
-    becomes the new "previous coach" and stays there until the next
-    real change. A missing/failed scrape (no superscore_coach detected)
-    is never treated as a change, so a scraping hiccup can't wipe out
-    the tracked history.
+    The first refresh with a new value stores it as pending. A second
+    consecutive refresh with the same value confirms the change. Rows
+    created before these confirmation fields existed are intentionally
+    reset to a clean baseline because their history may contain values
+    produced by transient or cross-club scrape errors.
     """
     if not previous_row:
-        return ""
+        return {
+            "change_date": "",
+            "previous_coach": "",
+            "confirmed_coach": superscore_coach or "",
+            "pending_coach": "",
+        }
 
-    stored_previous = previous_row.get("previous_superscore_coach", "")
+    stored_change_date = str(
+        previous_row.get("superscore_change_date", "") or ""
+    )[:10]
+    stored_previous = previous_row.get("previous_superscore_coach", "") or ""
+    confirmed_coach = str(
+        previous_row.get("confirmed_superscore_coach", "") or ""
+    ).strip()
+    pending_coach = str(
+        previous_row.get("pending_superscore_coach", "") or ""
+    ).strip()
 
     if not superscore_coach:
-        return stored_previous
+        return {
+            "change_date": stored_change_date,
+            "previous_coach": stored_previous,
+            "confirmed_coach": confirmed_coach,
+            "pending_coach": pending_coach,
+        }
 
-    previous_coach = previous_row.get("superscore_coach")
+    if not confirmed_coach:
+        return {
+            "change_date": "",
+            "previous_coach": "",
+            "confirmed_coach": superscore_coach,
+            "pending_coach": "",
+        }
 
-    if previous_coach and normalize_name(previous_coach) != normalize_name(superscore_coach):
-        return previous_coach
+    if coach_names_match(confirmed_coach, superscore_coach):
+        return {
+            "change_date": stored_change_date,
+            "previous_coach": stored_previous,
+            "confirmed_coach": confirmed_coach,
+            "pending_coach": "",
+        }
 
-    return stored_previous
+    if pending_coach and coach_names_match(pending_coach, superscore_coach):
+        return {
+            "change_date": last_checked[:10],
+            "previous_coach": confirmed_coach,
+            "confirmed_coach": superscore_coach,
+            "pending_coach": "",
+        }
+
+    return {
+        "change_date": stored_change_date,
+        "previous_coach": stored_previous,
+        "confirmed_coach": confirmed_coach,
+        "pending_coach": superscore_coach,
+    }
 
 
 def process_club(browser, club, last_checked, previous_row=None):
@@ -269,18 +307,13 @@ def process_club(browser, club, last_checked, previous_row=None):
         is_difference = True
         result = "DIFFERENCE"
     else:
-        is_difference = normalize_name(superscore_coach) != normalize_name(ninetyminut_coach)
+        is_difference = not coach_names_match(superscore_coach, ninetyminut_coach)
         result = "DIFFERENCE" if is_difference else "MATCH"
 
-    superscore_change_date = get_superscore_change_date(
+    superscore_history = get_superscore_history(
         previous_row,
         superscore_coach,
         last_checked,
-    )
-
-    previous_superscore_coach = get_previous_superscore_coach(
-        previous_row,
-        superscore_coach,
     )
 
     return {
@@ -288,8 +321,10 @@ def process_club(browser, club, last_checked, previous_row=None):
         "group": group,
         "club": club_name,
         "superscore_coach": superscore_coach,
-        "superscore_change_date": superscore_change_date,
-        "previous_superscore_coach": previous_superscore_coach,
+        "superscore_change_date": superscore_history["change_date"],
+        "previous_superscore_coach": superscore_history["previous_coach"],
+        "confirmed_superscore_coach": superscore_history["confirmed_coach"],
+        "pending_superscore_coach": superscore_history["pending_coach"],
         "ninetyminut_coach": ninetyminut_coach,
         "previous_90minut_coach": "",
         "change_date": change_date,
@@ -410,6 +445,8 @@ with open("results.csv", "w", encoding="utf-8", newline="") as file:
         "superscore_coach",
         "superscore_change_date",
         "previous_superscore_coach",
+        "confirmed_superscore_coach",
+        "pending_superscore_coach",
         "ninetyminut_coach",
         "previous_90minut_coach",
         "change_date",
