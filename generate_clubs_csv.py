@@ -182,6 +182,7 @@ SPECIAL_MATCHES = {
     # 3 Liga mappings
     "polonia sroda wlkp": "polonia sroda wielkopolska",
     "polonia sroda wielkopolska": "polonia sroda wielkopolska",
+    "row rybnik": "row 1964 rybnik",
 }
 
 
