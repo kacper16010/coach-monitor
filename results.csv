@@ -35,24 +35,24 @@ league,group,club,superscore_coach,superscore_change_date,previous_superscore_co
 2 Liga,,Znicz Pruszków,Lukasz Smolarow,2026-09-19,Sebastian Mordal,Łukasz Smolarow,,30 marca 2026,,,2026-09-24 12:11:38,False,MATCH
 2 Liga,,Śląsk II Wrocław,Michał Hetel,,,Michał Hetel,,24 grudnia 2024,,,2026-09-24 12:11:38,False,MATCH
 2 Liga,,Świt Szczecin,Przemyslaw Cecherz,,,Przemysław Cecherz,,14 sierpnia 2026,,,2026-09-24 12:11:38,False,MATCH
-3 Liga,Group 1,Jagiellonia II Białystok,Tomasz Kulhawik,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,KS CK Troszyn,Michał Hryszko,,,Michał Hryszko,,11 czerwca 2026,,,2026-09-24 12:11:38,False,MATCH
-3 Liga,Group 1,KTS Weszło Warszawa,Łukasz Ryczkowski,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Lechia Tomaszów Mazowiecki,Bartosz Grzelak,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Mazovia Mińsk Mazowiecki,Damian Guzek,,,Damian Guzek,,25 czerwca 2024,,,2026-09-24 12:11:38,False,MATCH
-3 Liga,Group 1,Mławianka Mława,Hermes Neves Hermes,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Olimpia Elbląg,Damian Hebda,,,Karol Przybyła,,25 czerwca 2026,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Olimpia Zambrów,Michał Kolanowski,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Pelikan Łowicz,Piotr Koceba,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Polonia Lidzbark Warmiński,,,,Piotr Jacek,,3 marca 2026,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Warta Sieradz,Marek Przybył,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Widzew II Łódź,Michał Czaplarski,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Wigry Suwałki,Arkadiusz Szczerbowski,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Wisła II Płock,Mateusz Lewandowski,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,Ząbkovia Ząbki,Tomasz Grzywna,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,ŁKS II Łódź,Konrad Gerega,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
-3 Liga,Group 1,ŁKS Łomża,Maciej Tarnogrodzki,,,Maciej Tarnogrodzki,,11 kwietnia 2026,,,2026-09-24 12:11:38,False,MATCH
-3 Liga,Group 1,Świt Nowy Dwór Mazowiecki,Michał Złotkowski,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
+3 Liga,Group 1,Jagiellonia II Białystok,Daniel Rusek,2026-09-24,Tomasz Kulhawik,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,KS CK Troszyn,Michał Hryszko,,,Michał Hryszko,,11 czerwca 2026,,,2026-09-24 13:20:45,False,MATCH
+3 Liga,Group 1,KTS Weszło Warszawa,Łukasz Ryczkowski,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Lechia Tomaszów Mazowiecki,Bartosz Grzelak,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Mazovia Mińsk Mazowiecki,Damian Guzek,,,Damian Guzek,,25 czerwca 2024,,,2026-09-24 13:20:45,False,MATCH
+3 Liga,Group 1,Mławianka Mława,Marek Golebiewski,2026-09-24,Hermes Neves Hermes,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Olimpia Elbląg,Karol Przybyła,2026-09-24,Damian Hebda,Karol Przybyła,,25 czerwca 2026,,,2026-09-24 13:20:45,False,MATCH
+3 Liga,Group 1,Olimpia Zambrów,Michał Kolanowski,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Pelikan Łowicz,Piotr Koceba,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Polonia Lidzbark Warmiński,Piotr Jacek,2026-09-24,,Piotr Jacek,,3 marca 2026,,,2026-09-24 13:20:45,False,MATCH
+3 Liga,Group 1,Warta Sieradz,Marek Przybył,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Widzew II Łódź,Paweł Ściebura,2026-09-24,Michał Czaplarski,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Wigry Suwałki,Arkadiusz Szczerbowski,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Wisła II Płock,Damian Kijek,2026-09-24,Mateusz Lewandowski,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,Ząbkovia Ząbki,Michał Maliszewski,2026-09-24,Tomasz Grzywna,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,ŁKS II Łódź,Radosław Pęciak,2026-09-24,Konrad Gerega,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
+3 Liga,Group 1,ŁKS Łomża,Maciej Tarnogrodzki,,,Maciej Tarnogrodzki,,11 kwietnia 2026,,,2026-09-24 13:20:45,False,MATCH
+3 Liga,Group 1,Świt Nowy Dwór Mazowiecki,Michał Złotkowski,,,,,,,,2026-09-24 13:20:45,True,DIFFERENCE
 3 Liga,Group 2,Bałtyk Koszalin,Mariusz Lenartowicz,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
 3 Liga,Group 2,Błękitni Stargard,Jarosław Piskorz,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
 3 Liga,Group 2,Chemik Bydgoszcz,Piotr Gruszka,,,,,,,,2026-09-24 12:11:38,True,DIFFERENCE
