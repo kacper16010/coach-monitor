@@ -1,22 +1,22 @@
 league,group,club,superscore_coach,superscore_change_date,previous_superscore_coach,confirmed_superscore_coach,pending_superscore_coach,superscore_history_version,ninetyminut_coach,previous_90minut_coach,change_date,comment,comment_updated_at,last_checked,is_difference,result
-1 Liga,,Arka Gdynia,Marek Jarolim,,,Marek Jarolim,,2,Marek Jarolím,,17 czerwca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Bruk-Bet Termalica Nieciecza,Marcin Brosz,,,Marcin Brosz,,2,Marcin Brosz,,19 marca 2024,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Chrobry Głogów,Lukasz Becella,,,Lukasz Becella,,2,Łukasz Becella,,20 listopada 2024,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Lechia Gdańsk,Vladislav Lupashko,,,Vladislav Lupashko,,2,Władysław Łupaszko,,1 lipca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Miedź Legnica,Dawid Kroczek,,,Dawid Kroczek,,2,Dawid Kroczek,,23 września 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Odra Opole,Łukasz Tomczyk,,,Łukasz Tomczyk,,2,Łukasz Tomczyk,,2 czerwca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Podbeskidzie Bielsko-Biała,Marcin Wlodarski,,,Marcin Wlodarski,,2,Marcin Włodarski,,5 listopada 2025,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Pogoń Grodzisk Mazowiecki,Tomasz Kafarski,,,Tomasz Kafarski,,2,Tomasz Kafarski,,10 czerwca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Pogoń Siedlce,Adam Nocon,,,Adam Nocon,,2,Adam Nocoń,,1 października 2024,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Polonia Bytom,Konrad Gerega,,,Konrad Gerega,,2,Konrad Gerega,,18 czerwca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Polonia Warszawa,Piotr Stokowiec,,,Piotr Stokowiec,,2,Piotr Stokowiec,,4 czerwca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Puszcza Niepołomice,Tomasz Tulacz,,,Tomasz Tulacz,,2,Tomasz Tułacz,,13 sierpnia 2015,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Ruch Chorzów,Waldemar Fornalik,,,Waldemar Fornalik,,2,Waldemar Fornalik,,6 sierpnia 2025,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Stal Mielec,Damian Skiba,,,Damian Skiba,,2,Damian Skiba,,23 czerwca 2026,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Stal Rzeszów,Marek Zub,,,Marek Zub,,2,Marek Zub,,19 czerwca 2023,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Unia Skierniewice,Kamil Socha,,,Kamil Socha,,2,Kamil Socha,,29 czerwca 2023,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,Warta Poznań,Maciej Tokarczyk,,,Maciej Tokarczyk,,2,Maciej Tokarczyk,,10 czerwca 2025,,,2026-09-24 15:33:01,False,MATCH
-1 Liga,,ŁKS Łódź,Grzegorz Szoka,,,Grzegorz Szoka,,2,Grzegorz Szoka,,11 listopada 2025,,,2026-09-24 15:33:01,False,MATCH
+1 Liga,,Arka Gdynia,,,,Marek Jarolim,,2,Marek Jarolím,,17 czerwca 2026,,,2026-09-24 15:38:04,True,DIFFERENCE
+1 Liga,,Bruk-Bet Termalica Nieciecza,Marcin Brosz,,,Marcin Brosz,,2,Marcin Brosz,,19 marca 2024,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Chrobry Głogów,Lukasz Becella,,,Lukasz Becella,,2,Łukasz Becella,,20 listopada 2024,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Lechia Gdańsk,Vladislav Lupashko,,,Vladislav Lupashko,,2,Władysław Łupaszko,,1 lipca 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Miedź Legnica,Dawid Kroczek,,,Dawid Kroczek,,2,Dawid Kroczek,,23 września 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Odra Opole,Łukasz Tomczyk,,,Łukasz Tomczyk,,2,Łukasz Tomczyk,,2 czerwca 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Podbeskidzie Bielsko-Biała,Marcin Wlodarski,,,Marcin Wlodarski,,2,Marcin Włodarski,,5 listopada 2025,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Pogoń Grodzisk Mazowiecki,Tomasz Kafarski,,,Tomasz Kafarski,,2,Tomasz Kafarski,,10 czerwca 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Pogoń Siedlce,Adam Nocon,,,Adam Nocon,,2,Adam Nocoń,,1 października 2024,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Polonia Bytom,Konrad Gerega,,,Konrad Gerega,,2,Konrad Gerega,,18 czerwca 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Polonia Warszawa,Piotr Stokowiec,,,Piotr Stokowiec,,2,Piotr Stokowiec,,4 czerwca 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Puszcza Niepołomice,Tomasz Tulacz,,,Tomasz Tulacz,,2,Tomasz Tułacz,,13 sierpnia 2015,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Ruch Chorzów,Waldemar Fornalik,,,Waldemar Fornalik,,2,Waldemar Fornalik,,6 sierpnia 2025,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Stal Mielec,Damian Skiba,,,Damian Skiba,,2,Damian Skiba,,23 czerwca 2026,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Stal Rzeszów,Marek Zub,,,Marek Zub,,2,Marek Zub,,19 czerwca 2023,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Unia Skierniewice,Kamil Socha,,,Kamil Socha,,2,Kamil Socha,,29 czerwca 2023,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,Warta Poznań,Maciej Tokarczyk,,,Maciej Tokarczyk,,2,Maciej Tokarczyk,,10 czerwca 2025,,,2026-09-24 15:38:04,False,MATCH
+1 Liga,,ŁKS Łódź,Grzegorz Szoka,,,Grzegorz Szoka,,2,Grzegorz Szoka,,11 listopada 2025,,,2026-09-24 15:38:04,False,MATCH
 2 Liga,,Avia Świdnik,Wojciech Szacon,,,Wojciech Szacon,,2,Wojciech Szacoń,,9 września 2024,,,2026-09-24 15:33:01,False,MATCH
 2 Liga,,Chojniczanka Chojnice,Marek Brzozowski,,,Marek Brzozowski,,2,Marek Brzozowski,,19 września 2025,,,2026-09-24 15:33:01,False,MATCH
 2 Liga,,GKS Tychy,Rene Poms,,,Rene Poms,,2,René Poms,,10 marca 2026,,,2026-09-24 15:33:01,False,MATCH
