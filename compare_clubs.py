@@ -15,7 +15,9 @@ start_time = time.time()
 
 COACH_ALIASES = {
     "yuriy shatalov": "jurij szatalow",
-
+    "vladislav lupashko": "wladyslaw lupaszko",
+    "vladyslav lupashko": "wladyslaw lupaszko",
+    "wladyslaw lupashko": "wladyslaw lupaszko",
 }
 
 
@@ -49,6 +51,9 @@ def normalize_name(name):
 
 
 def get_superscore_coach(browser, url):
+    if not url:
+        return None
+
     page = browser.new_page()
 
     blocked_words = [

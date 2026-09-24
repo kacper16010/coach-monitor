@@ -4,6 +4,7 @@ import html
 import re
 import unicodedata
 from difflib import SequenceMatcher
+from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
 import argparse
 import os
@@ -272,7 +273,7 @@ def get_superscore_clubs(url):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(url, wait_until="domcontentloaded")
+        page.goto(url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_timeout(3000)
 
         links = page.locator("a").evaluate_all("""
@@ -303,7 +304,7 @@ def get_90minut_clubs(url):
 
     html_text = response.read().decode("iso-8859-2", errors="ignore")
 
-    pattern = r'href="([^"]*skarb\.php\?id_klub=\d+[^"]*)"[^>]*>(.*?)</a>'
+    pattern = r'''href\s*=\s*["']([^"']*skarb\.php\?id_klub=\d+[^"']*)["'][^>]*>(.*?)</a>'''
     matches = re.findall(pattern, html_text, flags=re.IGNORECASE | re.DOTALL)
 
     clubs = {}
@@ -315,12 +316,8 @@ def get_90minut_clubs(url):
         if not name:
             continue
 
-        if href.startswith("http"):
-            full_url = href
-        elif href.startswith("/"):
-            full_url = "http://www.90minut.pl" + href
-        else:
-            full_url = "http://www.90minut.pl/" + href
+        href = html.unescape(href)
+        full_url = urljoin(url, href)
 
         clubs[name] = full_url
 
@@ -382,18 +379,31 @@ def generate_rows_for_league(config):
     superscore_clubs = get_superscore_clubs(superscore_table_url)
     ninetyminut_clubs = get_90minut_clubs(ninetyminut_table_url)
 
+    if not superscore_clubs:
+        raise RuntimeError(f"No SuperScore clubs found for {league} {group}")
+    if not ninetyminut_clubs:
+        raise RuntimeError(f"No 90minut clubs found for {league} {group}")
+
     rows = []
+    matched_90minut_names = set()
 
     for ss_name, ss_url in superscore_clubs.items():
+        available_90minut_clubs = {
+            name: url
+            for name, url in ninetyminut_clubs.items()
+            if name not in matched_90minut_names
+        }
         matched_90_name, matched_90_url = find_matching_90minut_club(
             ss_name,
-            ninetyminut_clubs
+            available_90minut_clubs,
         )
 
         if matched_90_url is None:
             print("NO MATCH:", league, group, ss_name)
             matched_90_name = ss_name
             matched_90_url = ""
+        else:
+            matched_90minut_names.add(matched_90_name)
 
         rows.append({
             "league": league,
@@ -401,6 +411,19 @@ def generate_rows_for_league(config):
             "club": matched_90_name,
             "superscore_url": ss_url,
             "ninetyminut_url": matched_90_url,
+        })
+
+    for ninety_name, ninety_url in ninetyminut_clubs.items():
+        if ninety_name in matched_90minut_names:
+            continue
+
+        print("NO SUPERSCORE MATCH:", league, group, ninety_name)
+        rows.append({
+            "league": league,
+            "group": group,
+            "club": ninety_name,
+            "superscore_url": "",
+            "ninetyminut_url": ninety_url,
         })
 
     return rows
