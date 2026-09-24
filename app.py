@@ -1270,6 +1270,23 @@ if "Differences" in page:
                 make_row_key,
                 axis=1,
             )
+
+            active_count = int((~filtered_differences["is_ignored_difference"]).sum())
+            ignored_count = int(filtered_differences["is_ignored_difference"].sum())
+            if active_count:
+                st.error(f"{active_count} active coach differences detected.")
+            else:
+                st.success("No active differences for the selected leagues.")
+            if ignored_count:
+                st.caption(f"Ignored differences shown at the bottom: {ignored_count}")
+
+            results_table = filtered_differences.sort_values(
+                by=["is_ignored_difference", "league", "group", "club"],
+                ascending=[True, True, True, True],
+            )
+            render_results_table(results_table, show_league=True)
+
+            st.subheader("Manage ignored differences")
             ignore_editor = filtered_differences[
                 [
                     "Row Key",
@@ -1333,21 +1350,6 @@ if "Differences" in page:
                     if saved:
                         st.success("Ignored differences saved.")
                         st.rerun()
-
-            active_count = int((~filtered_differences["is_ignored_difference"]).sum())
-            ignored_count = int(filtered_differences["is_ignored_difference"].sum())
-            if active_count:
-                st.error(f"{active_count} active coach differences detected.")
-            else:
-                st.success("No active differences for the selected leagues.")
-            if ignored_count:
-                st.caption(f"Ignored differences shown at the bottom: {ignored_count}")
-
-            filtered_differences = filtered_differences.sort_values(
-                by=["is_ignored_difference", "league", "group", "club"],
-                ascending=[True, True, True, True],
-            )
-            render_results_table(filtered_differences, show_league=True)
 
 
 elif "Search" in page:

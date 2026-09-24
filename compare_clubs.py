@@ -212,14 +212,7 @@ def result_key(row):
 
 
 def get_superscore_history(previous_row, superscore_coach, last_checked):
-    """Confirm a coach change twice before adding it to history.
-
-    The first refresh with a new value stores it as pending. A second
-    consecutive refresh with the same value confirms the change. Rows
-    created before these confirmation fields existed are intentionally
-    reset to a clean baseline because their history may contain values
-    produced by transient or cross-club scrape errors.
-    """
+    """Reset legacy history once, then record every detected change immediately."""
     if not previous_row:
         return {
             "change_date": "",
@@ -253,16 +246,12 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
     confirmed_coach = str(
         previous_row.get("confirmed_superscore_coach", "") or ""
     ).strip()
-    pending_coach = str(
-        previous_row.get("pending_superscore_coach", "") or ""
-    ).strip()
-
     if not superscore_coach:
         return {
             "change_date": stored_change_date,
             "previous_coach": stored_previous,
             "confirmed_coach": confirmed_coach,
-            "pending_coach": pending_coach,
+            "pending_coach": "",
             "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
@@ -284,20 +273,11 @@ def get_superscore_history(previous_row, superscore_coach, last_checked):
             "history_version": SUPERSCORE_HISTORY_VERSION,
         }
 
-    if pending_coach and coach_names_match(pending_coach, superscore_coach):
-        return {
-            "change_date": last_checked[:10],
-            "previous_coach": confirmed_coach,
-            "confirmed_coach": superscore_coach,
-            "pending_coach": "",
-            "history_version": SUPERSCORE_HISTORY_VERSION,
-        }
-
     return {
-        "change_date": stored_change_date,
-        "previous_coach": stored_previous,
-        "confirmed_coach": confirmed_coach,
-        "pending_coach": superscore_coach,
+        "change_date": last_checked[:10],
+        "previous_coach": confirmed_coach,
+        "confirmed_coach": superscore_coach,
+        "pending_coach": "",
         "history_version": SUPERSCORE_HISTORY_VERSION,
     }
 
