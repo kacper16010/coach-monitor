@@ -464,7 +464,9 @@ def save_club_preferences(df, row_key, new_comment_value, ignore_difference):
         return False
 
     selected_row = selected.iloc[0]
-    new_comment = clean_comment(new_comment_value)
+    requested_comment = (
+        None if new_comment_value is None else clean_comment(new_comment_value)
+    )
 
     for attempt in range(3):
         try:
@@ -494,6 +496,9 @@ def save_club_preferences(df, row_key, new_comment_value, ignore_difference):
             clean_comment(comments_df.loc[mask, "comment"].iloc[-1])
             if mask.any()
             else clean_comment(selected_row.get("comment", ""))
+        )
+        new_comment = (
+            current_comment if requested_comment is None else requested_comment
         )
         current_ignored_signature = (
             str(comments_df.loc[mask, "ignored_signature"].iloc[-1]).strip()
@@ -1123,6 +1128,7 @@ st.info(f"Last full refresh: {global_last_checked}")
 
 
 all_differences = df[df["is_difference_calculated"] == True]
+all_raw_differences = df[df["is_raw_difference"] == True]
 
 with st.sidebar:
     st.header("Coach Monitor")
@@ -1179,10 +1185,10 @@ with st.sidebar:
 if "Differences" in page:
     st.header("Differences")
 
-    if len(all_differences) == 0:
+    if len(all_raw_differences) == 0:
         st.success("No coach differences detected.")
     else:
-        difference_labels = all_differences.apply(get_competition_label, axis=1)
+        difference_labels = all_raw_differences.apply(get_competition_label, axis=1)
         filter_options = list(dict.fromkeys(difference_labels.tolist()))
         selected_competitions = st.multiselect(
             "Leagues",
@@ -1190,16 +1196,93 @@ if "Differences" in page:
             default=filter_options,
             key="differences_league_filter",
         )
-        filtered_differences = all_differences[
+        filtered_differences = all_raw_differences[
             difference_labels.isin(selected_competitions)
-        ]
+        ].copy()
 
         if filtered_differences.empty:
             st.info("No differences for the selected leagues.")
         else:
-            st.error(
-                f"{len(filtered_differences)} coach differences detected "
-                f"({len(all_differences)} total)."
+            filtered_differences["Row Key"] = filtered_differences.apply(
+                make_row_key,
+                axis=1,
+            )
+            ignore_editor = filtered_differences[
+                [
+                    "Row Key",
+                    "is_ignored_difference",
+                    "league",
+                    "group",
+                    "club",
+                    "superscore_coach",
+                    "ninetyminut_coach",
+                ]
+            ].rename(columns={
+                "is_ignored_difference": "Ignore",
+                "league": "League",
+                "group": "Group",
+                "club": "Club",
+                "superscore_coach": "SuperScore Coach",
+                "ninetyminut_coach": "90minut Coach",
+            })
+            ignore_editor = ignore_editor.sort_values(
+                by=["Ignore", "League", "Group", "Club"],
+                ascending=[True, True, True, True],
+            )
+
+            edited_ignores = st.data_editor(
+                ignore_editor,
+                width="stretch",
+                hide_index=True,
+                disabled=[
+                    "League",
+                    "Group",
+                    "Club",
+                    "SuperScore Coach",
+                    "90minut Coach",
+                ],
+                column_config={
+                    "Row Key": None,
+                    "Ignore": st.column_config.CheckboxColumn("Ignore"),
+                },
+                key="global_difference_ignore_editor",
+            )
+
+            if st.button("Save ignored differences", type="primary"):
+                current_ignore_by_key = {
+                    make_row_key(row): bool(row.get("is_ignored_difference"))
+                    for _, row in filtered_differences.iterrows()
+                }
+                changes = [
+                    (row["Row Key"], bool(row["Ignore"]))
+                    for _, row in edited_ignores.iterrows()
+                    if bool(row["Ignore"])
+                    != current_ignore_by_key.get(row["Row Key"], False)
+                ]
+
+                if not changes:
+                    st.info("No ignore settings changed.")
+                else:
+                    saved = all(
+                        save_club_preferences(df, row_key, None, ignored)
+                        for row_key, ignored in changes
+                    )
+                    if saved:
+                        st.success("Ignored differences saved.")
+                        st.rerun()
+
+            active_count = int((~filtered_differences["is_ignored_difference"]).sum())
+            ignored_count = int(filtered_differences["is_ignored_difference"].sum())
+            if active_count:
+                st.error(f"{active_count} active coach differences detected.")
+            else:
+                st.success("No active differences for the selected leagues.")
+            if ignored_count:
+                st.caption(f"Ignored differences shown at the bottom: {ignored_count}")
+
+            filtered_differences = filtered_differences.sort_values(
+                by=["is_ignored_difference", "league", "group", "club"],
+                ascending=[True, True, True, True],
             )
             render_results_table(filtered_differences, show_league=True)
 
